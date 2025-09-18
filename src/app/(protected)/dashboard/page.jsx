@@ -1,7 +1,6 @@
 "use client";
 import useAuth from "@/hooks/useAuth";
-import PanelAdmin from "@/components/PanelAdmin"; // کامپوننت UI را وارد می‌کنیم
-import LogoutIcon from "@/components/icons/LogoutIcon"; // آیکون خروج (فرض شده)
+import PanelAdmin from "@/components/Template/PanelAdmin/PanelAdmin"; // کامپوننت UI را وارد می‌کنیم
 
 // این کامپوننت صفحه اصلی داشبورد است
 // چون داخل پوشه (protected) قرار دارد، به صورت خودکار محافظت می‌شود
@@ -9,7 +8,6 @@ export default function DashboardPage() {
   // اطلاعات کاربر و تابع خروج را از کانتکست می‌گیریم
   const { user, logout } = useAuth();
   console.log(user);
-  
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-colorThemeDark-primary text-center pt-10 px-4">
@@ -23,8 +21,7 @@ export default function DashboardPage() {
           onClick={logout}
           className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors duration-300"
         >
-          <LogoutIcon className="w-5 h-5" />
-          خروج
+          خروج از حساب ادمین
         </button>
       </div>
 
