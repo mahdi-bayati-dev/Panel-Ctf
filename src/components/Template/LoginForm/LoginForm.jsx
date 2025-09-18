@@ -31,6 +31,10 @@ function LoginForm() {
   // این تابع فقط زمانی اجرا می‌شود که فرم معتبر باشد
   const onSubmit = async (data) => {
     // data حاوی مقادیر فرم است: { username: "...", password: "..." }
+    console.log(
+      "LOGIN_FORM: Form submitted with valid data. Calling login function...",
+      data
+    );
     await login(data);
   };
 
