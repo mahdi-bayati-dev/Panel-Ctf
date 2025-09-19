@@ -116,11 +116,13 @@ function UsersPage() {
                       >
                         <div className="border border-colorThemeLite-green rounded-2xl p-4 flex gap-4 my-2 items-center hover:scale-[102%] hover:bg-colorThemeLite-green/20 transition-transform cursor-pointer">
                           <img
-                            src={user.picture_url || "/img/p-user/person.png"} // استفاده از آواتار پیش‌فرض
+                            src={user.picture_url || "/img/p-user/person.png"}
                             alt={user.name}
                             className="w-16 h-16 rounded-2xl object-cover border border-colorThemeLite-green/60"
                           />
-                          <div className="flex justify-between items-center text-left">
+
+                          {/* این div رو flex-1 کن تا عرض پر بشه */}
+                          <div className="flex justify-between items-center flex-1 text-left">
                             <span className="font-bold text-lg">
                               {user.name}
                             </span>
