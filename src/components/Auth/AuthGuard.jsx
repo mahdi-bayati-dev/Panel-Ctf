@@ -15,7 +15,11 @@ const AuthGuard = ({ children }) => {
   }, [isAuthenticated, loading, router]);
 
   if (loading || !isAuthenticated) {
-    return <div>در حال بارگذاری...</div>;
+    return (
+      <div className="min-h-screen flex flex-col items-center bg-colorThemeDark-primary ">
+        <p>در حال بارگذاری صفحه لطفا صبر کنید ...</p>
+      </div>
+    );
   }
 
   return <>{children}</>;
