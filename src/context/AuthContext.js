@@ -2,9 +2,9 @@
 
 import { createContext, useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import apiClient, { setGetAccessToken } from "../lib/axios"; // مسیر را چک کن
+import apiClient, { setGetAccessToken } from "../lib/axios";
 import toast from "react-hot-toast";
-import { getCookie } from "@/utils/utils"; // مسیر را چک کن
+import { getCookie } from "@/utils/utils";
 
 const AuthContext = createContext(null);
 
@@ -22,6 +22,7 @@ export const AuthProvider = ({ children }) => {
     );
   }, []);
 
+  // نسخه بهینه fetchUser که به رهگیر axios اجازه کار می‌دهد
   const fetchUser = async () => {
     console.log("AUTH_CONTEXT: Fetching user data...");
     try {
@@ -31,60 +32,16 @@ export const AuthProvider = ({ children }) => {
         "AUTH_CONTEXT_FETCH_SUCCESS: User data fetched and set.",
         data
       );
+      return data;
     } catch (error) {
       console.error(
         "AUTH_CONTEXT_FETCH_FAILED: Could not fetch user data.",
         error
       );
-      setUser(null);
-      setAccessToken(null);
+      // خطا را دوباره پرتاب می‌کنیم تا رهگیر axios آن را مدیریت کند
+      throw error;
     }
   };
-  // کامنت فارسی برای توضیح کد
-
-  // تابع login اصلاح شده برای عیب‌یابی دقیق
-  // const login = async ({ username, password }) => {
-  //   console.log("AUTH_CONTEXT_LOGIN: Attempting login for user:", username);
-  //   try {
-  //     // مرحله ۱: تلاش برای لاگین اولیه
-  //     const response = await apiClient.post("/api/admin/login", {
-  //       username,
-  //       password,
-  //     });
-  //     console.log("AUTH_CONTEXT_LOGIN_SUCCESS: Login API call successful.");
-  //     setToken(response.data);
-
-  //     // مرحله ۲: تلاش برای گرفتن اطلاعات کاربر
-  //     try {
-  //       await fetchUser(); // اینجا از fetchUser اصلاح‌شده استفاده می‌کنیم
-
-  //       // اگر هر دو مرحله موفق بود، کاربر به داشبورد هدایت می‌شود
-  //       router.push("/dashboard");
-  //       toast.success("خوش آمدید!");
-  //     } catch (fetchError) {
-  //       // این خطا یعنی لاگین موفق بود، اما گرفتن اطلاعات کاربر شکست خورد
-  //       console.error(
-  //         "LOGIN_FLOW_ERROR: Login was successful, but fetching user data failed!",
-  //         fetchError
-  //       );
-  //       toast.error("ورود موفق بود اما دریافت اطلاعات کاربر با خطا مواجه شد.");
-  //       // در اینجا می‌توانیم کاربر را لاگ‌اوت کنیم تا در وضعیت نامعتبر نماند
-  //       logout();
-  //     }
-  //   } catch (loginError) {
-  //     // این خطا یعنی خود درخواست اولیه لاگین شکست خورده است
-  //     console.error(
-  //       "LOGIN_FLOW_ERROR: The initial login request failed!",
-  //       loginError
-  //     );
-  //     toast.error(
-  //       loginError.response?.data?.message ||
-  //         "نام کاربری یا رمز عبور اشتباه است."
-  //     );
-  //   }
-  // };
-  // کامنت فارسی برای توضیح کد
-  // فایل: context/AuthContext.js
 
   const login = async ({ username, password }) => {
     console.log("AUTH_CONTEXT_LOGIN: Attempting login for user:", username);
@@ -95,28 +52,20 @@ export const AuthProvider = ({ children }) => {
       });
       console.log("AUTH_CONTEXT_LOGIN_SUCCESS: Login API call successful.");
 
-      // آبجکت توکن را از پاسخ دریافت می‌کنیم
       const tokenData = response.data;
-
-      // توکن را در state قرار می‌دهیم (برای رندرهای بعدی)
       setToken(tokenData);
 
-      // !!! خط کد کلیدی برای حل مشکل !!!
-      // توکن را مستقیماً روی هدرهای پیش‌فرض axios ست می‌کنیم
-      // تا درخواست بعدی (fetchUser) بلافاصله از آن استفاده کند.
       if (tokenData.access_token) {
         apiClient.defaults.headers.common[
           "Authorization"
         ] = `Bearer ${tokenData.access_token}`;
       }
 
-      // حالا fetchUser را صدا می‌زنیم که از هدر جدید استفاده خواهد کرد
       await fetchUser();
 
       router.push("/dashboard");
       toast.success("خوش آمدید!");
     } catch (error) {
-      // ... بخش catch بدون تغییر باقی می‌ماند
       console.error(
         "AUTH_CONTEXT_LOGIN_FAILED:",
         error.response?.data || error.message
@@ -129,14 +78,10 @@ export const AuthProvider = ({ children }) => {
 
   const logout = useCallback(async () => {
     console.log("AUTH_CONTEXT_LOGOUT: Logging out user...");
+    // پاک کردن توکن از هدرهای پیش‌فرض axios در زمان خروج
+    delete apiClient.defaults.headers.common["Authorization"];
     try {
-      await apiClient.post(
-        "/api/admin/logout",
-        {},
-        {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        }
-      );
+      await apiClient.post("/api/admin/logout", {});
       console.log("AUTH_CONTEXT_LOGOUT: Logout API call successful.");
     } catch (error) {
       console.error(
@@ -151,30 +96,44 @@ export const AuthProvider = ({ children }) => {
         "AUTH_CONTEXT_LOGOUT: Client-side state cleared and redirected to login."
       );
     }
-  }, [accessToken, router]);
+  }, [router]);
 
+  // useEffect برای بازیابی جلسه در زمان رفرش صفحه
   useEffect(() => {
     const tryAutoLogin = async () => {
       console.log(
         "AUTH_CONTEXT_AUTOLOGIN: Trying to auto-login on component mount..."
       );
       try {
-        if (document.cookie.includes("ADMIN_CSRF")) {
-          const csrfToken = getCookie("ADMIN_CSRF");
+        const csrfCookie = getCookie("ADMIN_CSRF");
+        if (csrfCookie) {
           console.log(
             "AUTH_CONTEXT_AUTOLOGIN: ADMIN_CSRF cookie found. Attempting refresh."
           );
-          const { data } = await apiClient.post(
+
+          const { data: tokenData } = await apiClient.post(
             "/api/admin/refresh",
             {},
-            {
-              headers: { "X-ADMIN-CSRF": csrfToken },
-            }
+            { headers: { "X-ADMIN-CSRF": csrfCookie } }
           );
+
           console.log(
             "AUTH_CONTEXT_AUTOLOGIN_SUCCESS: Auto-login refresh successful."
           );
-          setToken(data);
+
+          // توکن را در state قرار می‌دهیم
+          setToken(tokenData);
+
+          // *** راه‌حل کلیدی برای مشکل رفرش ***
+          // توکن را مستقیماً روی هدرهای پیش‌فرض axios ست می‌کنیم
+          // تا درخواست بعدی (fetchUser) بلافاصله از آن استفاده کند.
+          if (tokenData.access_token) {
+            apiClient.defaults.headers.common[
+              "Authorization"
+            ] = `Bearer ${tokenData.access_token}`;
+          }
+
+          // حالا fetchUser را صدا می‌زنیم که از هدر جدید استفاده خواهد کرد
           await fetchUser();
         } else {
           console.log(
@@ -196,6 +155,12 @@ export const AuthProvider = ({ children }) => {
     tryAutoLogin();
   }, [setToken]);
 
+  // useEffect برای اتصال توکن به رهگیر
+  useEffect(() => {
+    setGetAccessToken(() => accessToken);
+  }, [accessToken]);
+
+  // useEffect برای مدیریت رویدادهای سفارشی
   useEffect(() => {
     const handleTokenRefreshed = (event) => {
       console.log("AUTH_CONTEXT_EVENT: 'tokenRefreshed' event received.");
@@ -212,10 +177,6 @@ export const AuthProvider = ({ children }) => {
       window.removeEventListener("logout", handleLogout);
     };
   }, [setToken, logout]);
-
-  useEffect(() => {
-    setGetAccessToken(() => accessToken);
-  }, [accessToken]);
 
   return (
     <AuthContext.Provider
