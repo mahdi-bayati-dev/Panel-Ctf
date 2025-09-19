@@ -5,9 +5,10 @@ import { useQuery } from "@tanstack/react-query";
 import apiClient from "@/lib/axios";
 import useAuth from "@/hooks/useAuth";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import BackIcon from "@/components/icons/back";
 // کامپوننت اسکلت لودینگ جدید را وارد می‌کنیم
 import UserDetailSkeleton from "@/components/Template/users/UserDetailSkeleton";
+import { isDynamicPostpone } from "next/dist/server/app-render/dynamic-rendering";
 
 // تابع برای فراخوانی API و گرفتن جزئیات یک کاربر خاص
 const fetchUserById = async (userId) => {
@@ -72,7 +73,7 @@ export default function UserDetailPage() {
           href="/dashboard"
           className="flex items-center gap-2 text-colorThemeLite-accent hover:text-white mb-6"
         >
-          <ArrowRight size={20} />
+          <BackIcon/>
           <span>بازگشت به لیست کاربران</span>
         </Link>
 
