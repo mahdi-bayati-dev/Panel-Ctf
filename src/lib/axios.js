@@ -34,16 +34,14 @@ apiClient.interceptors.request.use(
       method: config.method,
       data: config.data,
     });
-    // لاگ هدر برار
-    if (config.headers["Authorization"]) {
-      console.log(
-        "✅ هدر Authorization با موفقیت ست شد:",
-        config.headers["Authorization"]
-      );
-    } else {
-      console.warn("⚠️ هدر Authorization در درخواست وجود ندارد.");
+    // --- لاگ شرطی و دقیق فقط برای درخواست /me ---
+    if (config.url.endsWith("/me")) {
+      console.log("--- DEBUG LOG FOR /me REQUEST ---");
+      console.log("URL:", config.url);
+      console.log("HEADERS:", config.headers);
+      console.log("SPECIFIC AUTH HEADER:", config.headers["Authorization"]);
+      console.log("--- END DEBUG LOG ---");
     }
-    // اتملم لاگ
     return config;
   },
   (error) => {
