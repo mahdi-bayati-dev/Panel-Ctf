@@ -64,31 +64,31 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = useCallback(async () => {
-    console.log("AUTH_CONTEXT_LOGOUT: Logging out user...");
-    try {
-      await apiClient.post(
-        "/api/admin/logout",
-        {},
-        {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        }
-      );
-      console.log("AUTH_CONTEXT_LOGOUT: Logout API call successful.");
-    } catch (error) {
-      console.error(
-        "AUTH_CONTEXT_LOGOUT_API_FAILED: Logout API failed, but logging out from client anyway.",
-        error
-      );
-    } finally {
-      setUser(null);
-      setAccessToken(null);
-      router.push("/login");
-      console.log(
-        "AUTH_CONTEXT_LOGOUT: Client-side state cleared and redirected to login."
-      );
-    }
-  }, [accessToken, router]);
+  // const logout = useCallback(async () => {
+  //   console.log("AUTH_CONTEXT_LOGOUT: Logging out user...");
+  //   try {
+  //     await apiClient.post(
+  //       "/api/admin/logout",
+  //       {},
+  //       {
+  //         headers: { Authorization: `Bearer ${accessToken}` },
+  //       }
+  //     );
+  //     console.log("AUTH_CONTEXT_LOGOUT: Logout API call successful.");
+  //   } catch (error) {
+  //     console.error(
+  //       "AUTH_CONTEXT_LOGOUT_API_FAILED: Logout API failed, but logging out from client anyway.",
+  //       error
+  //     );
+  //   } finally {
+  //     setUser(null);
+  //     setAccessToken(null);
+  //     router.push("/login");
+  //     console.log(
+  //       "AUTH_CONTEXT_LOGOUT: Client-side state cleared and redirected to login."
+  //     );
+  //   }
+  // }, [accessToken, router]);
 
   useEffect(() => {
     const tryAutoLogin = async () => {
