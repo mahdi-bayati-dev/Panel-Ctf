@@ -34,6 +34,16 @@ apiClient.interceptors.request.use(
       method: config.method,
       data: config.data,
     });
+    // لاگ هدر برار
+    if (config.headers["Authorization"]) {
+      console.log(
+        "✅ هدر Authorization با موفقیت ست شد:",
+        config.headers["Authorization"]
+      );
+    } else {
+      console.warn("⚠️ هدر Authorization در درخواست وجود ندارد.");
+    }
+    // اتملم لاگ
     return config;
   },
   (error) => {

@@ -42,52 +42,47 @@ export const AuthProvider = ({ children }) => {
   };
   // کامنت فارسی برای توضیح کد
 
-
-
-
-
-// تابع login اصلاح شده برای عیب‌یابی دقیق
-const login = async ({ username, password }) => {
-  console.log("AUTH_CONTEXT_LOGIN: Attempting login for user:", username);
-  try {
-    // مرحله ۱: تلاش برای لاگین اولیه
-    const response = await apiClient.post("/api/admin/login", {
-      username,
-      password,
-    });
-    console.log("AUTH_CONTEXT_LOGIN_SUCCESS: Login API call successful.");
-    setToken(response.data);
-
-    // مرحله ۲: تلاش برای گرفتن اطلاعات کاربر
+  // تابع login اصلاح شده برای عیب‌یابی دقیق
+  const login = async ({ username, password }) => {
+    console.log("AUTH_CONTEXT_LOGIN: Attempting login for user:", username);
     try {
-      await fetchUser(); // اینجا از fetchUser اصلاح‌شده استفاده می‌کنیم
-      
-      // اگر هر دو مرحله موفق بود، کاربر به داشبورد هدایت می‌شود
-      router.push("/dashboard");
-      toast.success("خوش آمدید!");
+      // مرحله ۱: تلاش برای لاگین اولیه
+      const response = await apiClient.post("/api/admin/login", {
+        username,
+        password,
+      });
+      console.log("AUTH_CONTEXT_LOGIN_SUCCESS: Login API call successful.");
+      setToken(response.data);
 
-    } catch (fetchError) {
-      // این خطا یعنی لاگین موفق بود، اما گرفتن اطلاعات کاربر شکست خورد
+      // مرحله ۲: تلاش برای گرفتن اطلاعات کاربر
+      try {
+        await fetchUser(); // اینجا از fetchUser اصلاح‌شده استفاده می‌کنیم
+
+        // اگر هر دو مرحله موفق بود، کاربر به داشبورد هدایت می‌شود
+        router.push("/dashboard");
+        toast.success("خوش آمدید!");
+      } catch (fetchError) {
+        // این خطا یعنی لاگین موفق بود، اما گرفتن اطلاعات کاربر شکست خورد
+        console.error(
+          "LOGIN_FLOW_ERROR: Login was successful, but fetching user data failed!",
+          fetchError
+        );
+        toast.error("ورود موفق بود اما دریافت اطلاعات کاربر با خطا مواجه شد.");
+        // در اینجا می‌توانیم کاربر را لاگ‌اوت کنیم تا در وضعیت نامعتبر نماند
+        logout();
+      }
+    } catch (loginError) {
+      // این خطا یعنی خود درخواست اولیه لاگین شکست خورده است
       console.error(
-        "LOGIN_FLOW_ERROR: Login was successful, but fetching user data failed!",
-        fetchError
+        "LOGIN_FLOW_ERROR: The initial login request failed!",
+        loginError
       );
-      toast.error("ورود موفق بود اما دریافت اطلاعات کاربر با خطا مواجه شد.");
-      // در اینجا می‌توانیم کاربر را لاگ‌اوت کنیم تا در وضعیت نامعتبر نماند
-      logout(); 
+      toast.error(
+        loginError.response?.data?.message ||
+          "نام کاربری یا رمز عبور اشتباه است."
+      );
     }
-
-  } catch (loginError) {
-    // این خطا یعنی خود درخواست اولیه لاگین شکست خورده است
-    console.error(
-      "LOGIN_FLOW_ERROR: The initial login request failed!",
-      loginError
-    );
-    toast.error(
-      loginError.response?.data?.message || "نام کاربری یا رمز عبور اشتباه است."
-    );
-  }
-}
+  };
 
   const logout = useCallback(async () => {
     console.log("AUTH_CONTEXT_LOGOUT: Logging out user...");
