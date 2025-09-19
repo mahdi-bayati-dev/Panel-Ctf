@@ -3,7 +3,7 @@ import { z } from "zod";
 export const loginSchema = z.object({
   // lib/validation/loginSchema.js
 
-  username: z.string().min(11, "شماره تماس باید حداقل ۱۱ رقم باشد."),
+  username: z.string().min(3, "نام کاربری اجباری است"),
 
   password: z
     .string()

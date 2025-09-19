@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import apiClient from '@/lib/axios';
 import useAuth from '@/hooks/useAuth';
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
+import BackIcon from '@/components/icons/back';
 // کامپوننت اسکلت لودینگ جدید را وارد می‌کنیم
 import UserDetailSkeleton from '@/components/Template/users/UserDetailSkeleton';
 
@@ -63,7 +63,7 @@ export default function UserDetailPage() {
         <div className="min-h-screen flex flex-col items-center bg-colorThemeDark-primary pt-10 px-4">
             <div className="w-full max-w-2xl">
                 <Link href="/dashboard" className="flex items-center gap-2 text-colorThemeLite-accent hover-text-white mb-6">
-                    <ArrowRight size={20} />
+                    <BackIcon />
                     <span>بازگشت به لیست کاربران</span>
                 </Link>
 
