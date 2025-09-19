@@ -1,96 +1,85 @@
 "use client";
-import React from "react";
-import { useParams } from "next/navigation";
-import Link from "next/link";
 
-// داده‌های فیک (می‌تونی بعداً به API وصلش کنی)
-const fakeUsers = [
-  {
-    id: 1,
-    name: "Mahdi Bayati",
-    email: "mahdi@example.com",
-    role: "کاربر عادی",
-    score: 22440,
-    avatar: "/img/p-user/person.png",
-    joinDate: "1402/07/15",
-  },
-  {
-    id: 2,
-    name: "Ali Rezaei",
-    email: "ali@example.com",
-    role: "ادمین",
-    score: 19870,
-    avatar: "/img/p-user/person.png",
-    joinDate: "1402/06/12",
-  },
-  {
-    id: 3,
-    name: "Sara Mohammadi",
-    email: "sara@example.com",
-    role: "کاربر عادی",
-    score: 17650,
-    avatar: "/img/p-user/person.png",
-    joinDate: "1402/05/01",
-  },
-];
+import { useParams } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
+import apiClient from '@/lib/axios'; // کلاینت axios
+import useAuth from '@/hooks/useAuth'; // برای گرفتن توکن
+import Link from 'next/link';
+import BackIcon from '@/components/icons/back';
 
-function UserDetails() {
-  const params = useParams();
-  const userId = parseInt(params.id); // گرفتن id از url
-  const user = fakeUsers.find((u) => u.id === userId);
+// تابع برای فراخوانی API و گرفتن جزئیات یک کاربر خاص
+const fetchUserById = async (userId) => {
+    const { data } = await apiClient.get(`/api/admin/user/${userId}`);
+    return data;
+};
 
-  if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-red-500 text-lg font-bold">
-        کاربر یافت نشد 😢
-      </div>
-    );
-  }
-
-  return (
-    
-    <div className="min-h-screen flex flex-col items-center justify-center  bg-colorThemeDark-primary  text-white px-6 py-10">
-      <div className="max-w-lg w-full bg-dark rounded-2xl shadow-lg p-6">
-        {/* تصویر و نام */}
-        <div className="flex flex-col items-center gap-3 mb-6">
-          <img
-            src={user.avatar}
-            alt={user.name}
-            className="w-24 h-24 rounded-2xl border border-colorThemeLite-green/60 object-cover"
-          />
-          <h1 className="text-2xl font-bold">{user.name}</h1>
-          <span className="text-colorThemeLite-accent text-sm">
-            نقش: {user.role}
-          </span>
+// کامپوننت برای نمایش یک آیتم از اطلاعات کاربر
+const InfoRow = ({ label, value, isVerified }) => (
+    <div className="flex justify-between items-center py-3 border-b border-gray-700">
+        <span className="text-gray-400">{label}:</span>
+        <div className="flex items-center gap-2">
+            <span className="font-semibold text-white">{value || 'ثبت نشده'}</span>
+            {isVerified !== undefined && (
+                <span className={`px-2 py-1 text-xs rounded-full ${isVerified ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                    {isVerified ? 'تأیید شده' : 'تأیید نشده'}
+                </span>
+            )}
         </div>
-
-        {/* اطلاعات کاربر */}
-        <div className="space-y-3 text-right">
-          <p>
-            <span className="font-semibold">ایمیل:</span> {user.email}
-          </p>
-          <p>
-            <span className="font-semibold">امتیاز:</span>{" "}
-            {user.score.toLocaleString()}
-          </p>
-          <p>
-            <span className="font-semibold">تاریخ عضویت:</span> {user.joinDate}
-          </p>
-        </div>
-
-
-        {/* بازگشت */}
-        <div className="mt-6 text-center">
-          <Link
-            href="/home"
-            className="text-colorThemeLite-accent hover:underline text-sm"
-          >
-            ← بازگشت به لیست کاربران
-          </Link>
-        </div>
-      </div>
     </div>
-  );
-}
+);
 
-export default UserDetails;
+
+export default function UserDetailPage() {
+    const params = useParams();
+    const userId = params.id;
+    const { accessToken } = useAuth();
+
+    // استفاده از useQuery برای گرفتن و کش کردن اطلاعات کاربر
+    const { data: user, error, isLoading, isError } = useQuery({
+        // queryKey شامل userId است تا برای هر کاربر، کش جداگانه‌ای داشته باشیم
+        queryKey: ['user', userId],
+        // تابع فراخوانی API
+        queryFn: () => fetchUserById(userId),
+        // کوئری فقط زمانی فعال می‌شود که هم userId و هم accessToken وجود داشته باشند
+        enabled: !!userId && !!accessToken,
+    });
+
+    if (isLoading) {
+        return <div className="text-center mt-20 text-white">در حال بارگذاری اطلاعات کاربر...</div>;
+    }
+
+    if (isError) {
+        return <div className="text-center mt-20 text-red-500">خطا در دریافت اطلاعات: {error.message}</div>;
+    }
+
+    return (
+        <div className="min-h-screen flex flex-col items-center bg-colorThemeDark-primary pt-10 px-4">
+            <div className="w-full max-w-2xl">
+                <Link href="/dashboard" className="flex items-center gap-2 text-colorThemeLite-accent hover:text-white mb-6">
+                    <BackIcon/>
+                    <span>بازگشت به لیست کاربران</span>
+                </Link>
+
+                <div className="bg-dark rounded-2xl shadow-lg p-8 border border-colorThemeLite-green">
+                    <div className="flex flex-col items-center text-center mb-8">
+                        <img
+                            src={user.picture_url || '/img/p-user/person.png'}
+                            alt={user.name}
+                            className="w-32 h-32 rounded-full object-cover border-4 border-colorThemeLite-green mb-4"
+                        />
+                        <h1 className="text-3xl font-bold text-white">{user.name}</h1>
+                        <p className="text-gray-400">@{user.username}</p>
+                    </div>
+
+                    <div className="space-y-2">
+                        <InfoRow label="شناسه کاربری" value={user.id} />
+                        <InfoRow label="ایمیل" value={user.email} isVerified={user.is_email_verified} />
+                        <InfoRow label="شماره تلفن" value={user.phone} isVerified={user.is_phone_verified} />
+                        <InfoRow label="ادمین" value={user.is_admin ? 'بله' : 'خیر'} />
+                        <InfoRow label="تاریخ عضویت" value={new Date(user.created_at).toLocaleDateString('fa-IR')} />
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
