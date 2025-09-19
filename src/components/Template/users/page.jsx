@@ -120,7 +120,7 @@ function UsersPage() {
                             alt={user.name}
                             className="w-16 h-16 rounded-2xl object-cover border border-colorThemeLite-green/60"
                           />
-                          <div className="flex flex-col text-left">
+                          <div className="flex justify-between items-center text-left">
                             <span className="font-bold text-lg">
                               {user.name}
                             </span>
