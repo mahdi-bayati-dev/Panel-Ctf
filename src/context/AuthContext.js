@@ -22,72 +22,72 @@ export const AuthProvider = ({ children }) => {
     );
   }, []);
 
-  // const fetchUser = async () => {
-  //   console.log("AUTH_CONTEXT: Fetching user data...");
-  //   try {
-  //     const { data } = await apiClient.get("/api/admin/me");
-  //     setUser(data);
-  //     console.log(
-  //       "AUTH_CONTEXT_FETCH_SUCCESS: User data fetched and set.",
-  //       data
-  //     );
-  //   } catch (error) {
-  //     console.error(
-  //       "AUTH_CONTEXT_FETCH_FAILED: Could not fetch user data.",
-  //       error
-  //     );
-  //     setUser(null);
-  //     setAccessToken(null);
-  //   }
-  // };
-  // کامنت فارسی برای توضیح کد
-// فایل: context/AuthContext.js
-
-// تابع fetchUser اصلاح شده
-const fetchUser = async () => {
-  console.log("AUTH_CONTEXT: Fetching user data...");
-  try {
-    const { data } = await apiClient.get("/api/admin/me");
-    setUser(data);
-    console.log(
-      "AUTH_CONTEXT_FETCH_SUCCESS: User data fetched and set.",
-      data
-    );
-    // اگر موفق بود، خود آبجکت data را برمی‌گردانیم
-    return data;
-  } catch (error) {
-    console.error(
-      "AUTH_CONTEXT_FETCH_FAILED: Could not fetch user data.",
-      error
-    );
-    // به جای پاک کردن توکن، خطا را دوباره پرتاب می‌کنیم
-    // این کار به رهگیر axios اجازه می‌دهد که کار رفرش توکن را انجام دهد
-    throw error;
-  }
-};
-
-  const login = async ({ username, password }) => {
-    console.log("AUTH_CONTEXT_LOGIN: Attempting login for user:", username);
+  const fetchUser = async () => {
+    console.log("AUTH_CONTEXT: Fetching user data...");
     try {
-      const response = await apiClient.post("/api/admin/login", {
-        username,
-        password,
-      });
-      console.log("AUTH_CONTEXT_LOGIN_SUCCESS: Login API call successful.");
-      setToken(response.data);
-      await fetchUser();
-      router.push("/dashboard");
-      toast.success("خوش آمدید!");
+      const { data } = await apiClient.get("/api/admin/me");
+      setUser(data);
+      console.log(
+        "AUTH_CONTEXT_FETCH_SUCCESS: User data fetched and set.",
+        data
+      );
     } catch (error) {
       console.error(
-        "AUTH_CONTEXT_LOGIN_FAILED:",
-        error.response?.data || error.message
+        "AUTH_CONTEXT_FETCH_FAILED: Could not fetch user data.",
+        error
       );
-      toast.error(
-        error.response?.data?.message || "نام کاربری یا رمز عبور اشتباه است."
-      );
+      setUser(null);
+      setAccessToken(null);
     }
   };
+  // کامنت فارسی برای توضیح کد
+
+
+
+
+
+// تابع login اصلاح شده برای عیب‌یابی دقیق
+const login = async ({ username, password }) => {
+  console.log("AUTH_CONTEXT_LOGIN: Attempting login for user:", username);
+  try {
+    // مرحله ۱: تلاش برای لاگین اولیه
+    const response = await apiClient.post("/api/admin/login", {
+      username,
+      password,
+    });
+    console.log("AUTH_CONTEXT_LOGIN_SUCCESS: Login API call successful.");
+    setToken(response.data);
+
+    // مرحله ۲: تلاش برای گرفتن اطلاعات کاربر
+    try {
+      await fetchUser(); // اینجا از fetchUser اصلاح‌شده استفاده می‌کنیم
+      
+      // اگر هر دو مرحله موفق بود، کاربر به داشبورد هدایت می‌شود
+      router.push("/dashboard");
+      toast.success("خوش آمدید!");
+
+    } catch (fetchError) {
+      // این خطا یعنی لاگین موفق بود، اما گرفتن اطلاعات کاربر شکست خورد
+      console.error(
+        "LOGIN_FLOW_ERROR: Login was successful, but fetching user data failed!",
+        fetchError
+      );
+      toast.error("ورود موفق بود اما دریافت اطلاعات کاربر با خطا مواجه شد.");
+      // در اینجا می‌توانیم کاربر را لاگ‌اوت کنیم تا در وضعیت نامعتبر نماند
+      logout(); 
+    }
+
+  } catch (loginError) {
+    // این خطا یعنی خود درخواست اولیه لاگین شکست خورده است
+    console.error(
+      "LOGIN_FLOW_ERROR: The initial login request failed!",
+      loginError
+    );
+    toast.error(
+      loginError.response?.data?.message || "نام کاربری یا رمز عبور اشتباه است."
+    );
+  }
+}
 
   const logout = useCallback(async () => {
     console.log("AUTH_CONTEXT_LOGOUT: Logging out user...");
