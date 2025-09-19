@@ -11,14 +11,12 @@ const AuthContext = createContext(null);
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [accessToken, setAccessToken] = useState(null);
-  // مقدار اولیه loading را true می‌گذاریم تا AuthGuard منتظر بماند
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   const setToken = useCallback((tokenData) => {
     const token = tokenData?.access_token || null;
     setAccessToken(token);
-    // برای جلوگیری از باگ‌های زمان‌بندی، توکن را مستقیماً روی هدرهای پیش‌فرض axios هم ست می‌کنیم
     if (token) {
       apiClient.defaults.headers.common["Authorization"] = `Bearer ${token}`;
     } else {
@@ -35,7 +33,6 @@ export const AuthProvider = ({ children }) => {
       return data;
     } catch (error) {
       console.error("AUTH_CONTEXT_FETCH_FAILED.", error);
-      // خطا را دوباره پرتاب می‌کنیم تا رهگیر axios آن را مدیریت کرده و در صورت نیاز توکن را رفرش کند
       throw error;
     }
   }, []);
@@ -48,12 +45,9 @@ export const AuthProvider = ({ children }) => {
         password,
       });
       console.log("AUTH_CONTEXT_LOGIN_SUCCESS.");
-
       const tokenData = response.data;
-      setToken(tokenData); // این تابع هم state را آپدیت می‌کند و هم هدر axios را
-
+      setToken(tokenData);
       await fetchUser();
-
       router.push("/dashboard");
       toast.success("خوش آمدید!");
     } catch (error) {
@@ -69,19 +63,15 @@ export const AuthProvider = ({ children }) => {
 
   const logout = useCallback(async () => {
     console.log("AUTH_CONTEXT_LOGOUT: Logging out...");
-    // ابتدا state را پاک می‌کنیم تا UI بلافاصله واکنش نشان دهد
     setUser(null);
     setAccessToken(null);
     delete apiClient.defaults.headers.common["Authorization"];
-
     try {
-      // درخواست به سرور برای باطل کردن جلسه در سمت بک‌اند
       await apiClient.post("/api/admin/logout", {});
       console.log("AUTH_CONTEXT_LOGOUT: API call successful.");
     } catch (error) {
       console.error("AUTH_CONTEXT_LOGOUT_API_FAILED:", error);
     } finally {
-      // چه درخواست موفق بود چه نبود، کاربر را به صفحه لاگین هدایت می‌کنیم
       router.push("/login");
       console.log(
         "AUTH_CONTEXT_LOGOUT: Client-side state cleared and redirected."
@@ -89,7 +79,7 @@ export const AuthProvider = ({ children }) => {
     }
   }, [router]);
 
-  // useEffect برای بازیابی جلسه در زمان رفرش صفحه
+  // *** راه‌حل نهایی: اصلاح useEffect اصلی ***
   useEffect(() => {
     const tryAutoLogin = async () => {
       console.log("AUTH_CONTEXT_AUTOLOGIN: Trying to auto-login...");
@@ -97,7 +87,7 @@ export const AuthProvider = ({ children }) => {
 
       if (!csrfCookie) {
         console.log("AUTH_CONTEXT_AUTOLOGIN: No CSRF cookie. Skipping.");
-        setLoading(false); // <-- مهم: اگر کوکی نبود، لودینگ را تمام کن
+        setLoading(false);
         return;
       }
 
@@ -105,43 +95,33 @@ export const AuthProvider = ({ children }) => {
         console.log(
           "AUTH_CONTEXT_AUTOLOGIN: CSRF cookie found. Refreshing token..."
         );
-
         const { data: tokenData } = await apiClient.post(
           "/api/admin/refresh",
           {},
           { headers: { "X-ADMIN-CSRF": csrfCookie } }
         );
-
         console.log("AUTH_CONTEXT_AUTOLOGIN_SUCCESS: Token refreshed.");
-
-        // *** راه‌حل کلیدی برای مشکل رفرش ***
-        // توکن جدید را هم در state و هم روی هدرهای axios ست می‌کنیم
         setToken(tokenData);
-
-        // حالا با توکن جدید، اطلاعات کاربر را می‌گیریم
         await fetchUser();
       } catch (error) {
         console.warn("AUTH_CONTEXT_AUTOLOGIN_FAILED:", error.response?.data);
-        // اگر رفرش شکست خورد، فقط state را پاک می‌کنیم تا AuthGuard ریدایرکت کند
         setUser(null);
         setAccessToken(null);
       } finally {
-        // loading فقط در انتهای تمام عملیات (چه موفق چه ناموفق) false می‌شود
         console.log(
           "AUTH_CONTEXT_AUTOLOGIN: Finished. Loading state is now false."
         );
         setLoading(false);
       }
     };
-    tryAutoLogin();
-  }, [setToken, fetchUser]);
 
-  // این useEffect فقط برای اتصال state به رهگیر axios است و منطق اصلی در رهگیر قرار دارد
+    tryAutoLogin();
+  }, []); // <-- آرایه وابستگی باید خالی باشد تا فقط یک بار اجرا شود
+
   useEffect(() => {
     setGetAccessToken(() => accessToken);
   }, [accessToken]);
 
-  // این useEffect رویداد سفارشی logout که از رهگیر axios می‌آید را مدیریت می‌کند
   useEffect(() => {
     const handleLogout = () => {
       console.log("AUTH_CONTEXT_EVENT: 'logout' event received.");
