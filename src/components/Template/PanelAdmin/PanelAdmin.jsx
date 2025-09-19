@@ -1,7 +1,6 @@
 "use client";
 import React, { useState } from "react";
 import Ticket from "@/components/Template/ticket/ticket";
-// کامپوننت لیست کاربران را با نام جدید وارد می‌کنیم
 import UsersPage from "../users/page";
 
 // آیکون ها
@@ -12,8 +11,7 @@ import FAQAdmin from "@/components/Template/faq/faq";
 
 // این کامپوننت فقط مسئول نمایش UI پنل است
 export default function PanelAdmin() {
-  // بخش کاربران را به "users" تغییر می‌دهیم و آن را پیش‌فرض می‌کنیم
-  const [openSection, setOpenSection] = useState("users");
+  const [openSection, setOpenSection] = useState("users"); // بخش کاربران به صورت پیش‌فرض باز است
 
   const toggleSection = (section) => {
     setOpenSection(openSection === section ? null : section);
@@ -25,51 +23,48 @@ export default function PanelAdmin() {
       <div className="flex flex-col gap-2 rounded-lg bg-dark p-5 text-white border border-colorThemeLite-green">
         <div
           className="flex cursor-pointer items-center justify-between"
-          onClick={() => toggleSection("users")} // اینجا را هم به "users" تغییر می‌دهیم
+          onClick={() => toggleSection("Users")}
         >
           <h2 className="flex gap-2 items-center text-colorThemeLite-accent text-base font-bold text-center">
-            <RulesIcon /> کاربران
+            <RulesIcon />
+            کاربران
           </h2>
           <ChevronIcon
             className={`h-5 w-5 text-white transition-transform duration-500 ${
-              openSection === "users" ? "rotate-180" : "" // اینجا را هم به "users" تغییر می‌دهیم
+              openSection === "Users" ? "rotate-180" : ""
             }`}
           />
         </div>
-
         <div
           className={`grid transition-all duration-500 ease-in-out ${
-            openSection === "users" // اینجا را هم به "users" تغییر می‌دهیم
+            openSection === "Users"
               ? "grid-rows-[1fr] opacity-100"
               : "grid-rows-[0fr] opacity-0"
           }`}
         >
           <div className="overflow-hidden">
-            {/* کامپوننت جدید لیست کاربران را در اینجا قرار می‌دهیم */}
-            <UsersPage />
+            {/* کامپوننت لیست کاربران در اینجا قرار می‌گیرد */}
+            <UsersPage/>
           </div>
         </div>
       </div>
-      {/* تیکت ها (بدون تغییر) */}
+
+      {/* تیکت ها */}
       <div className="flex flex-col gap-2 rounded-lg bg-dark p-5 text-white border border-colorThemeLite-green">
-               {" "}
         <div
           className="flex cursor-pointer items-center justify-between"
           onClick={() => toggleSection("ticket")}
         >
-                   {" "}
           <h2 className="flex gap-2 items-center text-colorThemeLite-accent text-base font-bold">
-                        <FaqIcon />            تیکت ها          {" "}
+            <FaqIcon />
+            تیکت ها
           </h2>
-                   {" "}
           <ChevronIcon
             className={`h-5 w-5 text-white transition-transform duration-500 ${
               openSection === "ticket" ? "rotate-180" : ""
             }`}
           />
-                 {" "}
         </div>
-               {" "}
         <div
           className={`grid transition-all duration-500 ease-in-out ${
             openSection === "ticket"
@@ -77,31 +72,29 @@ export default function PanelAdmin() {
               : "grid-rows-[0fr] opacity-0"
           }`}
         >
-                 
           <div className="overflow-hidden">
-                        <Ticket /> 
+            {/* کامپوننت تیکت‌ها در اینجا قرار می‌گیرد */}
+            <Ticket />
           </div>
-           
         </div>
       </div>
-      {/* سوالات متداول (بدون تغییر) */}
+
+      {/* سوالات متداول */}
       <div className="flex flex-col gap-2 rounded-lg bg-dark p-5 text-white border border-colorThemeLite-green">
         <div
           className="flex cursor-pointer items-center justify-between"
           onClick={() => toggleSection("faq")}
         >
           <h2 className="flex gap-2 items-center text-colorThemeLite-accent text-base font-bold">
-                        <FaqIcon />            سوالات متداول          {" "}
+            <FaqIcon />
+            سوالات متداول
           </h2>
-                   {" "}
           <ChevronIcon
             className={`h-5 w-5 text-white transition-transform duration-500 ${
               openSection === "faq" ? "rotate-180" : ""
             }`}
           />
-                 
         </div>
-               
         <div
           className={`grid transition-all duration-500 ease-in-out ${
             openSection === "faq"
@@ -109,13 +102,11 @@ export default function PanelAdmin() {
               : "grid-rows-[0fr] opacity-0"
           }`}
         >
-                   
           <div className="overflow-hidden">
-                        <FAQAdmin /> 
+            {/* کامپوننت سوالات متداول در اینجا قرار می‌گیرد */}
+            <FAQAdmin />
           </div>
-                 
         </div>
-             
       </div>
     </div>
   );
