@@ -75,11 +75,13 @@ export const AuthProvider = ({ children }) => {
     delete apiClient.defaults.headers.common["Authorization"];
 
     try {
+      // درخواست به سرور برای باطل کردن جلسه در سمت بک‌اند
       await apiClient.post("/api/admin/logout", {});
       console.log("AUTH_CONTEXT_LOGOUT: API call successful.");
     } catch (error) {
       console.error("AUTH_CONTEXT_LOGOUT_API_FAILED:", error);
     } finally {
+      // چه درخواست موفق بود چه نبود، کاربر را به صفحه لاگین هدایت می‌کنیم
       router.push("/login");
       console.log(
         "AUTH_CONTEXT_LOGOUT: Client-side state cleared and redirected."
@@ -112,6 +114,7 @@ export const AuthProvider = ({ children }) => {
 
         console.log("AUTH_CONTEXT_AUTOLOGIN_SUCCESS: Token refreshed.");
 
+        // *** راه‌حل کلیدی برای مشکل رفرش ***
         // توکن جدید را هم در state و هم روی هدرهای axios ست می‌کنیم
         setToken(tokenData);
 
@@ -119,7 +122,7 @@ export const AuthProvider = ({ children }) => {
         await fetchUser();
       } catch (error) {
         console.warn("AUTH_CONTEXT_AUTOLOGIN_FAILED:", error.response?.data);
-        // اگر رفرش شکست خورد، فقط state را پاک می‌کنیم
+        // اگر رفرش شکست خورد، فقط state را پاک می‌کنیم تا AuthGuard ریدایرکت کند
         setUser(null);
         setAccessToken(null);
       } finally {
