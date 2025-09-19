@@ -22,24 +22,49 @@ export const AuthProvider = ({ children }) => {
     );
   }, []);
 
-  const fetchUser = async () => {
-    console.log("AUTH_CONTEXT: Fetching user data...");
-    try {
-      const { data } = await apiClient.get("/api/admin/me");
-      setUser(data);
-      console.log(
-        "AUTH_CONTEXT_FETCH_SUCCESS: User data fetched and set.",
-        data
-      );
-    } catch (error) {
-      console.error(
-        "AUTH_CONTEXT_FETCH_FAILED: Could not fetch user data.",
-        error
-      );
-      setUser(null);
-      setAccessToken(null);
-    }
-  };
+  // const fetchUser = async () => {
+  //   console.log("AUTH_CONTEXT: Fetching user data...");
+  //   try {
+  //     const { data } = await apiClient.get("/api/admin/me");
+  //     setUser(data);
+  //     console.log(
+  //       "AUTH_CONTEXT_FETCH_SUCCESS: User data fetched and set.",
+  //       data
+  //     );
+  //   } catch (error) {
+  //     console.error(
+  //       "AUTH_CONTEXT_FETCH_FAILED: Could not fetch user data.",
+  //       error
+  //     );
+  //     setUser(null);
+  //     setAccessToken(null);
+  //   }
+  // };
+  // کامنت فارسی برای توضیح کد
+// فایل: context/AuthContext.js
+
+// تابع fetchUser اصلاح شده
+const fetchUser = async () => {
+  console.log("AUTH_CONTEXT: Fetching user data...");
+  try {
+    const { data } = await apiClient.get("/api/admin/me");
+    setUser(data);
+    console.log(
+      "AUTH_CONTEXT_FETCH_SUCCESS: User data fetched and set.",
+      data
+    );
+    // اگر موفق بود، خود آبجکت data را برمی‌گردانیم
+    return data;
+  } catch (error) {
+    console.error(
+      "AUTH_CONTEXT_FETCH_FAILED: Could not fetch user data.",
+      error
+    );
+    // به جای پاک کردن توکن، خطا را دوباره پرتاب می‌کنیم
+    // این کار به رهگیر axios اجازه می‌دهد که کار رفرش توکن را انجام دهد
+    throw error;
+  }
+};
 
   const login = async ({ username, password }) => {
     console.log("AUTH_CONTEXT_LOGIN: Attempting login for user:", username);
@@ -64,31 +89,31 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // const logout = useCallback(async () => {
-  //   console.log("AUTH_CONTEXT_LOGOUT: Logging out user...");
-  //   try {
-  //     await apiClient.post(
-  //       "/api/admin/logout",
-  //       {},
-  //       {
-  //         headers: { Authorization: `Bearer ${accessToken}` },
-  //       }
-  //     );
-  //     console.log("AUTH_CONTEXT_LOGOUT: Logout API call successful.");
-  //   } catch (error) {
-  //     console.error(
-  //       "AUTH_CONTEXT_LOGOUT_API_FAILED: Logout API failed, but logging out from client anyway.",
-  //       error
-  //     );
-  //   } finally {
-  //     setUser(null);
-  //     setAccessToken(null);
-  //     router.push("/login");
-  //     console.log(
-  //       "AUTH_CONTEXT_LOGOUT: Client-side state cleared and redirected to login."
-  //     );
-  //   }
-  // }, [accessToken, router]);
+  const logout = useCallback(async () => {
+    console.log("AUTH_CONTEXT_LOGOUT: Logging out user...");
+    try {
+      await apiClient.post(
+        "/api/admin/logout",
+        {},
+        {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }
+      );
+      console.log("AUTH_CONTEXT_LOGOUT: Logout API call successful.");
+    } catch (error) {
+      console.error(
+        "AUTH_CONTEXT_LOGOUT_API_FAILED: Logout API failed, but logging out from client anyway.",
+        error
+      );
+    } finally {
+      setUser(null);
+      setAccessToken(null);
+      router.push("/login");
+      console.log(
+        "AUTH_CONTEXT_LOGOUT: Client-side state cleared and redirected to login."
+      );
+    }
+  }, [accessToken, router]);
 
   useEffect(() => {
     const tryAutoLogin = async () => {
