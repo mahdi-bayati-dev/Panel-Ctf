@@ -43,43 +43,86 @@ export const AuthProvider = ({ children }) => {
   // کامنت فارسی برای توضیح کد
 
   // تابع login اصلاح شده برای عیب‌یابی دقیق
+  // const login = async ({ username, password }) => {
+  //   console.log("AUTH_CONTEXT_LOGIN: Attempting login for user:", username);
+  //   try {
+  //     // مرحله ۱: تلاش برای لاگین اولیه
+  //     const response = await apiClient.post("/api/admin/login", {
+  //       username,
+  //       password,
+  //     });
+  //     console.log("AUTH_CONTEXT_LOGIN_SUCCESS: Login API call successful.");
+  //     setToken(response.data);
+
+  //     // مرحله ۲: تلاش برای گرفتن اطلاعات کاربر
+  //     try {
+  //       await fetchUser(); // اینجا از fetchUser اصلاح‌شده استفاده می‌کنیم
+
+  //       // اگر هر دو مرحله موفق بود، کاربر به داشبورد هدایت می‌شود
+  //       router.push("/dashboard");
+  //       toast.success("خوش آمدید!");
+  //     } catch (fetchError) {
+  //       // این خطا یعنی لاگین موفق بود، اما گرفتن اطلاعات کاربر شکست خورد
+  //       console.error(
+  //         "LOGIN_FLOW_ERROR: Login was successful, but fetching user data failed!",
+  //         fetchError
+  //       );
+  //       toast.error("ورود موفق بود اما دریافت اطلاعات کاربر با خطا مواجه شد.");
+  //       // در اینجا می‌توانیم کاربر را لاگ‌اوت کنیم تا در وضعیت نامعتبر نماند
+  //       logout();
+  //     }
+  //   } catch (loginError) {
+  //     // این خطا یعنی خود درخواست اولیه لاگین شکست خورده است
+  //     console.error(
+  //       "LOGIN_FLOW_ERROR: The initial login request failed!",
+  //       loginError
+  //     );
+  //     toast.error(
+  //       loginError.response?.data?.message ||
+  //         "نام کاربری یا رمز عبور اشتباه است."
+  //     );
+  //   }
+  // };
+  // کامنت فارسی برای توضیح کد
+  // فایل: context/AuthContext.js
+
   const login = async ({ username, password }) => {
     console.log("AUTH_CONTEXT_LOGIN: Attempting login for user:", username);
     try {
-      // مرحله ۱: تلاش برای لاگین اولیه
       const response = await apiClient.post("/api/admin/login", {
         username,
         password,
       });
       console.log("AUTH_CONTEXT_LOGIN_SUCCESS: Login API call successful.");
-      setToken(response.data);
 
-      // مرحله ۲: تلاش برای گرفتن اطلاعات کاربر
-      try {
-        await fetchUser(); // اینجا از fetchUser اصلاح‌شده استفاده می‌کنیم
+      // آبجکت توکن را از پاسخ دریافت می‌کنیم
+      const tokenData = response.data;
 
-        // اگر هر دو مرحله موفق بود، کاربر به داشبورد هدایت می‌شود
-        router.push("/dashboard");
-        toast.success("خوش آمدید!");
-      } catch (fetchError) {
-        // این خطا یعنی لاگین موفق بود، اما گرفتن اطلاعات کاربر شکست خورد
-        console.error(
-          "LOGIN_FLOW_ERROR: Login was successful, but fetching user data failed!",
-          fetchError
-        );
-        toast.error("ورود موفق بود اما دریافت اطلاعات کاربر با خطا مواجه شد.");
-        // در اینجا می‌توانیم کاربر را لاگ‌اوت کنیم تا در وضعیت نامعتبر نماند
-        logout();
+      // توکن را در state قرار می‌دهیم (برای رندرهای بعدی)
+      setToken(tokenData);
+
+      // !!! خط کد کلیدی برای حل مشکل !!!
+      // توکن را مستقیماً روی هدرهای پیش‌فرض axios ست می‌کنیم
+      // تا درخواست بعدی (fetchUser) بلافاصله از آن استفاده کند.
+      if (tokenData.access_token) {
+        apiClient.defaults.headers.common[
+          "Authorization"
+        ] = `Bearer ${tokenData.access_token}`;
       }
-    } catch (loginError) {
-      // این خطا یعنی خود درخواست اولیه لاگین شکست خورده است
+
+      // حالا fetchUser را صدا می‌زنیم که از هدر جدید استفاده خواهد کرد
+      await fetchUser();
+
+      router.push("/dashboard");
+      toast.success("خوش آمدید!");
+    } catch (error) {
+      // ... بخش catch بدون تغییر باقی می‌ماند
       console.error(
-        "LOGIN_FLOW_ERROR: The initial login request failed!",
-        loginError
+        "AUTH_CONTEXT_LOGIN_FAILED:",
+        error.response?.data || error.message
       );
       toast.error(
-        loginError.response?.data?.message ||
-          "نام کاربری یا رمز عبور اشتباه است."
+        error.response?.data?.message || "نام کاربری یا رمز عبور اشتباه است."
       );
     }
   };
