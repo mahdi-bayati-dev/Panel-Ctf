@@ -11,6 +11,7 @@ const AuthContext = createContext(null);
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [accessToken, setAccessToken] = useState(null);
+  // مقدار اولیه loading را true می‌گذاریم تا AuthGuard منتظر بماند
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
@@ -86,6 +87,7 @@ export const AuthProvider = ({ children }) => {
     }
   }, [router]);
 
+  // useEffect برای بازیابی جلسه در زمان رفرش صفحه
   useEffect(() => {
     const tryAutoLogin = async () => {
       console.log("AUTH_CONTEXT_AUTOLOGIN: Trying to auto-login...");
@@ -93,7 +95,7 @@ export const AuthProvider = ({ children }) => {
 
       if (!csrfCookie) {
         console.log("AUTH_CONTEXT_AUTOLOGIN: No CSRF cookie. Skipping.");
-        setLoading(false);
+        setLoading(false); // <-- مهم: اگر کوکی نبود، لودینگ را تمام کن
         return;
       }
 
@@ -101,11 +103,13 @@ export const AuthProvider = ({ children }) => {
         console.log(
           "AUTH_CONTEXT_AUTOLOGIN: CSRF cookie found. Refreshing token..."
         );
+
         const { data: tokenData } = await apiClient.post(
           "/api/admin/refresh",
           {},
           { headers: { "X-ADMIN-CSRF": csrfCookie } }
         );
+
         console.log("AUTH_CONTEXT_AUTOLOGIN_SUCCESS: Token refreshed.");
 
         // توکن جدید را هم در state و هم روی هدرهای axios ست می‌کنیم
@@ -119,6 +123,7 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
         setAccessToken(null);
       } finally {
+        // loading فقط در انتهای تمام عملیات (چه موفق چه ناموفق) false می‌شود
         console.log(
           "AUTH_CONTEXT_AUTOLOGIN: Finished. Loading state is now false."
         );
@@ -128,10 +133,12 @@ export const AuthProvider = ({ children }) => {
     tryAutoLogin();
   }, [setToken, fetchUser]);
 
+  // این useEffect فقط برای اتصال state به رهگیر axios است و منطق اصلی در رهگیر قرار دارد
   useEffect(() => {
     setGetAccessToken(() => accessToken);
   }, [accessToken]);
 
+  // این useEffect رویداد سفارشی logout که از رهگیر axios می‌آید را مدیریت می‌کند
   useEffect(() => {
     const handleLogout = () => {
       console.log("AUTH_CONTEXT_EVENT: 'logout' event received.");
