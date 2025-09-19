@@ -14,7 +14,7 @@ export default function DashboardPage() {
       <div className="w-full max-w-5xl mb-8 flex justify-between items-center px-2">
         {/* نمایش پیام خوش‌آمدگویی */}
         <h1 className="text-xl md:text-2xl font-bold text-white">
-          خوش آمدی، {user?.name || "ادمین عزیز"}!
+          خوش آمدی، {user?.username || "ادمین عزیز"}!
         </h1>
         {/* دکمه خروج */}
         <button
