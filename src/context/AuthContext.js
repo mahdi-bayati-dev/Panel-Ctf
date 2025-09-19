@@ -11,55 +11,49 @@ const AuthContext = createContext(null);
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [accessToken, setAccessToken] = useState(null);
+  // مقدار اولیه loading را true می‌گذاریم
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   const setToken = useCallback((tokenData) => {
     const token = tokenData?.access_token || null;
     setAccessToken(token);
-    console.log(
-      `AUTH_CONTEXT: Access token has been ${token ? "SET" : "CLEARED"}.`
-    );
+    // توکن را مستقیماً روی هدرهای پیش‌فرض axios هم ست می‌کنیم
+    if (token) {
+      apiClient.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    } else {
+      delete apiClient.defaults.headers.common["Authorization"];
+    }
   }, []);
 
-  // نسخه بهینه fetchUser که به رهگیر axios اجازه کار می‌دهد
-  const fetchUser = async () => {
+  const fetchUser = useCallback(async () => {
     console.log("AUTH_CONTEXT: Fetching user data...");
     try {
       const { data } = await apiClient.get("/api/admin/me");
       setUser(data);
-      console.log(
-        "AUTH_CONTEXT_FETCH_SUCCESS: User data fetched and set.",
-        data
-      );
+      console.log("AUTH_CONTEXT_FETCH_SUCCESS: User data fetched.", data);
       return data;
     } catch (error) {
-      console.error(
-        "AUTH_CONTEXT_FETCH_FAILED: Could not fetch user data.",
-        error
-      );
-      // خطا را دوباره پرتاب می‌کنیم تا رهگیر axios آن را مدیریت کند
+      console.error("AUTH_CONTEXT_FETCH_FAILED.", error);
+      // در صورت خطا، کاربر و توکن را پاک می‌کنیم
+      setUser(null);
+      setAccessToken(null);
+      delete apiClient.defaults.headers.common["Authorization"];
       throw error;
     }
-  };
+  }, []);
 
   const login = async ({ username, password }) => {
-    console.log("AUTH_CONTEXT_LOGIN: Attempting login for user:", username);
+    console.log("AUTH_CONTEXT_LOGIN: Attempting login...");
     try {
       const response = await apiClient.post("/api/admin/login", {
         username,
         password,
       });
-      console.log("AUTH_CONTEXT_LOGIN_SUCCESS: Login API call successful.");
+      console.log("AUTH_CONTEXT_LOGIN_SUCCESS.");
 
       const tokenData = response.data;
       setToken(tokenData);
-
-      if (tokenData.access_token) {
-        apiClient.defaults.headers.common[
-          "Authorization"
-        ] = `Bearer ${tokenData.access_token}`;
-      }
 
       await fetchUser();
 
@@ -77,106 +71,78 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = useCallback(async () => {
-    console.log("AUTH_CONTEXT_LOGOUT: Logging out user...");
-    // پاک کردن توکن از هدرهای پیش‌فرض axios در زمان خروج
+    console.log("AUTH_CONTEXT_LOGOUT: Logging out...");
+    setUser(null);
+    setAccessToken(null);
     delete apiClient.defaults.headers.common["Authorization"];
     try {
       await apiClient.post("/api/admin/logout", {});
-      console.log("AUTH_CONTEXT_LOGOUT: Logout API call successful.");
+      console.log("AUTH_CONTEXT_LOGOUT: API call successful.");
     } catch (error) {
-      console.error(
-        "AUTH_CONTEXT_LOGOUT_API_FAILED: Logout API failed, but logging out from client anyway.",
-        error
-      );
+      console.error("AUTH_CONTEXT_LOGOUT_API_FAILED:", error);
     } finally {
-      setUser(null);
-      setAccessToken(null);
       router.push("/login");
       console.log(
-        "AUTH_CONTEXT_LOGOUT: Client-side state cleared and redirected to login."
+        "AUTH_CONTEXT_LOGOUT: Client-side state cleared and redirected."
       );
     }
   }, [router]);
 
-  // useEffect برای بازیابی جلسه در زمان رفرش صفحه
   useEffect(() => {
     const tryAutoLogin = async () => {
-      console.log(
-        "AUTH_CONTEXT_AUTOLOGIN: Trying to auto-login on component mount..."
-      );
+      console.log("AUTH_CONTEXT_AUTOLOGIN: Trying to auto-login...");
+      const csrfCookie = getCookie("ADMIN_CSRF");
+
+      if (!csrfCookie) {
+        console.log("AUTH_CONTEXT_AUTOLOGIN: No CSRF cookie. Skipping.");
+        setLoading(false); // <-- مهم: اگر کوکی نبود، لودینگ را تمام کن
+        return;
+      }
+
       try {
-        const csrfCookie = getCookie("ADMIN_CSRF");
-        if (csrfCookie) {
-          console.log(
-            "AUTH_CONTEXT_AUTOLOGIN: ADMIN_CSRF cookie found. Attempting refresh."
-          );
-
-          const { data: tokenData } = await apiClient.post(
-            "/api/admin/refresh",
-            {},
-            { headers: { "X-ADMIN-CSRF": csrfCookie } }
-          );
-
-          console.log(
-            "AUTH_CONTEXT_AUTOLOGIN_SUCCESS: Auto-login refresh successful."
-          );
-
-          // توکن را در state قرار می‌دهیم
-          setToken(tokenData);
-
-          // *** راه‌حل کلیدی برای مشکل رفرش ***
-          // توکن را مستقیماً روی هدرهای پیش‌فرض axios ست می‌کنیم
-          // تا درخواست بعدی (fetchUser) بلافاصله از آن استفاده کند.
-          if (tokenData.access_token) {
-            apiClient.defaults.headers.common[
-              "Authorization"
-            ] = `Bearer ${tokenData.access_token}`;
-          }
-
-          // حالا fetchUser را صدا می‌زنیم که از هدر جدید استفاده خواهد کرد
-          await fetchUser();
-        } else {
-          console.log(
-            "AUTH_CONTEXT_AUTOLOGIN: No ADMIN_CSRF cookie found. Skipping auto-login."
-          );
-        }
-      } catch (error) {
-        console.warn(
-          "AUTH_CONTEXT_AUTOLOGIN_FAILED: Auto-login failed.",
-          error.response?.data
+        console.log(
+          "AUTH_CONTEXT_AUTOLOGIN: CSRF cookie found. Refreshing token..."
         );
+
+        const { data: tokenData } = await apiClient.post(
+          "/api/admin/refresh",
+          {},
+          { headers: { "X-ADMIN-CSRF": csrfCookie } }
+        );
+
+        console.log("AUTH_CONTEXT_AUTOLOGIN_SUCCESS: Token refreshed.");
+        setToken(tokenData);
+
+        // بعد از ست شدن توکن، اطلاعات کاربر را می‌گیریم
+        await fetchUser();
+      } catch (error) {
+        console.warn("AUTH_CONTEXT_AUTOLOGIN_FAILED:", error.response?.data);
+        // اگر رفرش شکست خورد، همه چیز را پاک می‌کنیم
+        setUser(null);
+        setAccessToken(null);
       } finally {
-        setLoading(false);
+        // loading فقط در انتهای تمام عملیات false می‌شود
         console.log(
           "AUTH_CONTEXT_AUTOLOGIN: Finished. Loading state is now false."
         );
+        setLoading(false);
       }
     };
     tryAutoLogin();
-  }, [setToken]);
+  }, [setToken, fetchUser]);
 
-  // useEffect برای اتصال توکن به رهگیر
   useEffect(() => {
     setGetAccessToken(() => accessToken);
   }, [accessToken]);
 
-  // useEffect برای مدیریت رویدادهای سفارشی
   useEffect(() => {
-    const handleTokenRefreshed = (event) => {
-      console.log("AUTH_CONTEXT_EVENT: 'tokenRefreshed' event received.");
-      setToken(event.detail);
-    };
     const handleLogout = () => {
       console.log("AUTH_CONTEXT_EVENT: 'logout' event received.");
       logout();
     };
-    window.addEventListener("tokenRefreshed", handleTokenRefreshed);
     window.addEventListener("logout", handleLogout);
-    return () => {
-      window.removeEventListener("tokenRefreshed", handleTokenRefreshed);
-      window.removeEventListener("logout", handleLogout);
-    };
-  }, [setToken, logout]);
+    return () => window.removeEventListener("logout", handleLogout);
+  }, [logout]);
 
   return (
     <AuthContext.Provider
