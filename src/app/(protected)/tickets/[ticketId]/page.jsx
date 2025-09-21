@@ -8,7 +8,8 @@ import {
   getAdminTicket,
   replyAdminTicket,
   closeAdminTicket,
-  reopenAdminTicket } from '@/lib/adminTicketsApi'
+  reopenAdminTicket,
+} from "@/lib/adminTicketsApi";
 import toast from "react-hot-toast";
 
 // آیکن‌ها و کامپوننت‌های UI
@@ -29,6 +30,8 @@ export default function AdminTicketDetailsPage() {
   const [body, setBody] = useState("");
   const [files, setFiles] = useState([]); // ✅ برای پشتیبانی از چند فایل
   const fileInputRef = useRef(null);
+  // ✅ جدید: یک متغیر برای بررسی وضعیت تیکت
+  const isTicketClosed = ticket.status === "closed";
 
   // --- دریافت داده‌های تیکت با useQuery ---
   const { data, isLoading, isError, error } = useQuery({
@@ -202,6 +205,12 @@ export default function AdminTicketDetailsPage() {
 
         {/* فرم ارسال پیام */}
         <form onSubmit={handleSend} className="p-4">
+          {/* ✅ جدید: اگر تیکت بسته بود، یک پیام نمایش می‌دهیم */}
+          {isTicketClosed && (
+            <div className="text-center p-3 mb-2 bg-yellow-900/50 text-yellow-300 text-sm rounded-lg">
+              این تیکت بسته شده است و امکان ارسال پیام جدید وجود ندارد.
+            </div>
+          )}
           <div className="flex flex-col items-center gap-2 border border-colorThemeLite-green rounded-2xl">
             <div className="flex justify-between w-full px-3 py-1 border-b border-colorThemeLite-green">
               <div>
@@ -245,12 +254,13 @@ export default function AdminTicketDetailsPage() {
               rows={3}
               value={body}
               onChange={(e) => setBody(e.target.value)}
+              disabled={isTicketClosed} // ✅ جدید: غیرفعال کردن textarea
               placeholder="پاسخ خود را بنویسید..."
               className="flex-1 w-full px-4 py-3 bg-dark text-gray-100 resize-none focus:outline-none rounded-xl mt-1"
             />
             <button
               type="submit"
-              disabled={replyMutation.isPending}
+              disabled={isTicketClosed || replyMutation.isPending}
               className="flex items-center gap-2 px-6 py-3 bg-colorThemeDark-primary text-white rounded-full hover:bg-green-600 transition font-medium shadow-md mb-2 disabled:bg-gray-600"
             >
               <TicketWitheIcon className="w-5 h-5" />

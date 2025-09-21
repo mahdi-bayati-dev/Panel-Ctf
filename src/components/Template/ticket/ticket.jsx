@@ -35,6 +35,21 @@ export default function AdminTicketsList() {
 
   return (
     <div className="p-4 bg-dark text-white border-t border-green-700 ">
+            {/* ✅ جدید: تب‌های فیلتر وضعیت */}
+      <div className="flex items-center gap-2 mb-4 border-b border-green-800 pb-2">
+        <button
+          onClick={() => setStatusFilter("open")}
+          className={`px-4 py-2 text-sm rounded-full transition ${statusFilter === 'open' ? 'bg-green-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
+        >
+          باز
+        </button>
+        <button
+          onClick={() => setStatusFilter("closed")}
+          className={`px-4 py-2 text-sm rounded-full transition ${statusFilter === 'closed' ? 'bg-green-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
+        >
+          بسته
+        </button>
+      </div>
       {/* هدر جدول */}
       <div className="hidden md:grid grid-cols-5 text-center font-medium text-green-400 border-b border-green-700 pb-2">
         <span>موضوع</span>
