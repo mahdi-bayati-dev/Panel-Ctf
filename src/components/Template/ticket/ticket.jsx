@@ -3,7 +3,7 @@
 import React from "react"; // ✅ ایمپورت کردن useState
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { listAdminTickets } from "@/lib/tickets/adminTicketsApi"; // ✅ اطمینان از مسیر صحیح
+import { listAdminTickets } from "@/lib/adminTicketsApi"; // ✅ اطمینان از مسیر صحیح
 import { TicketSkeleton } from "@/components/ui/TicketSkeleton";
 
 // کامپوننت برای نمایش پیام خطا
