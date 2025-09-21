@@ -34,12 +34,7 @@
 // کامپوننت اصلی اسکلتون که کل صفحه را مدیریت می‌کند
  export const TicketSkeleton = () => (
   <div className="p-4 bg-dark text-white border-t border-green-700 animate-pulse">
-    {/* هدر دسکتاپ */}
-    <div className="hidden md:grid grid-cols-3 text-center font-medium text-green-400 border-b border-green-700 pb-2">
-      <span>عنوان</span>
-      <span>آخرین بروزرسانی</span>
-      <span>وضعیت</span>
-    </div>
+    
 
     {/* ردیف‌های اسکلتون */}
     <div className="mt-4 space-y-4">
