@@ -20,44 +20,104 @@ const priorityStyles = {
   normal: { text: "معمولی", className: "bg-blue-800 text-blue-300" },
   high: { text: "زیاد", className: "bg-red-800 text-red-300" },
 };
+// ✅ جدید: کامپوننت کوچک و داخلی برای دکمه‌های فیلتر جهت خوانایی بهتر
+const FilterButton = ({ onClick, isActive, children }) => (
+  <button
+    onClick={onClick}
+    className={`px-4 py-2 text-sm rounded-full transition whitespace-nowrap ${
+      isActive
+        ? "bg-green-600 text-white shadow-md"
+        : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+    }`}
+  >
+    {children}
+  </button>
+);
 
 export default function AdminTicketsList() {
+  // ✅ قدم ۱: مدیریت یکپارچه فیلترها در یک آبجکت state
+  const [filters, setFilters] = useState({
+    status: "open", // مقدار پیش‌فرض برای وضعیت
+    priority: null, // مقدار پیش‌فرض برای اولویت (null یعنی همه)
+  });
+
+  // ✅ قدم ۲: آپدیت کردن useQuery برای کار با آبجکت فیلترها
+  const { data, isLoading, isError, error } = useQuery({
+    // کامنت: کلید کوئری حالا به کل آبجکت filters وابسته است.
+    queryKey: ["admin", "tickets", filters],
+    queryFn: () => {
+      // کامنت: فقط فیلترهایی که مقدار دارند به API ارسال می‌شوند.
+      const activeFilters = Object.fromEntries(
+        Object.entries(filters).filter(([_, value]) => value != null)
+      );
+      return listAdminTickets({ ...activeFilters, per_page: 20 });
+    },
+    // کامنت: با این گزینه، هنگام تغییر فیلتر، داده‌های قبلی نمایش داده می‌شوند تا تجربه بهتری ایجاد شود.
+    keepPreviousData: true,
+  });
   const [statusFilter, setStatusFilter] = useState("open");
 
-  const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["admin", "tickets", statusFilter],
-    queryFn: () => listAdminTickets({ status: statusFilter, per_page: 20 }),
-  });
+  // کامنت: یک تابع واحد برای مدیریت تغییر همه فیلترها
+  const handleFilterChange = (filterType, value) => {
+    setFilters((prevFilters) => ({
+      ...prevFilters,
+      [filterType]: value,
+    }));
+  };
 
   const tickets = data?.data || [];
 
   return (
     <div className="p-4 bg-dark text-white border-t border-green-700 ">
       {/* تب‌های فیلتر وضعیت (بدون تغییر) */}
-      <div className="flex items-center gap-2 mb-4 border-b border-green-800 pb-2">
-        {/* ... دکمه‌های فیلتر ... */}
-        <button
-          onClick={() => setStatusFilter("open")}
-          className={`px-4 py-2 text-sm rounded-full transition ${
-            statusFilter === "open"
-              ? "bg-green-600 text-white"
-              : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-          }`}
-        >
-          باز
-        </button>
-        <button
-          onClick={() => setStatusFilter("closed")}
-          className={`px-4 py-2 text-sm rounded-full transition ${
-            statusFilter === "closed"
-              ? "bg-green-600 text-white"
-              : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-          }`}
-        >
-          بسته
-        </button>
-      </div>
+      {/* ✅ قدم ۳: بازطراحی بخش فیلترها برای ظاهری بهتر و ریسپانسیو */}
+      <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-start sm:items-center mb-4 border-b border-green-800 pb-4 flex-wrap">
+        {/* گروه فیلتر وضعیت */}
+        <div className="flex items-center gap-2">
+          <span className="font-semibold text-sm text-gray-400">وضعیت:</span>
+          <FilterButton
+            onClick={() => handleFilterChange("status", "open")}
+            isActive={filters.status === "open"}
+          >
+            باز
+          </FilterButton>
+          <FilterButton
+            onClick={() => handleFilterChange("status", "closed")}
+            isActive={filters.status === "closed"}
+          >
+            بسته
+          </FilterButton>
+        </div>
 
+        {/* گروه فیلتر اولویت */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="font-semibold text-sm text-gray-400">اولویت:</span>
+          <FilterButton
+            onClick={() => handleFilterChange("priority", null)} // null یعنی حذف فیلتر اولویت
+            isActive={filters.priority === null}
+          >
+            همه
+          </FilterButton>
+          <FilterButton
+            onClick={() => handleFilterChange("priority", "low")}
+            isActive={filters.priority === "low"}
+          >
+            کم
+          </FilterButton>
+          <FilterButton
+            onClick={() => handleFilterChange("priority", "normal")}
+            isActive={filters.priority === "normal"}
+          >
+            معمولی
+          </FilterButton>
+          <FilterButton
+            onClick={() => handleFilterChange("priority", "high")}
+            isActive={filters.priority === "high"}
+          >
+            زیاد
+          </FilterButton>
+        </div>
+      </div>
       {/* 🔄 تغییر: هدر جدول به ۶ ستون تغییر کرد */}
       <div className="hidden md:grid grid-cols-6 text-center font-medium text-green-400 border-b border-green-700 pb-2">
         <span>موضوع</span>
