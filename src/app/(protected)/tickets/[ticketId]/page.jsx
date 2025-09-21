@@ -172,11 +172,11 @@ export default function AdminTicketDetailsPage() {
                   ) : (
                     <UserIconRejecter className="w-5 h-5 text-blue-400" />
                   )}
-                  <span className="font-semibold">
+                  <span className="font-semibold text-white">
                     {msg.sender.display_name}
                   </span>
                 </div>
-                {msg.body && <p className="break-words">{msg.body}</p>}
+                {msg.body && <p className="break-words text-white">{msg.body}</p>}
 
                 {/* نمایش فایل‌های پیوست */}
                 {msg.attachments && msg.attachments.length > 0 && (
