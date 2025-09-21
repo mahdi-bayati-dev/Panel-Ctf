@@ -41,7 +41,6 @@ export default function AdminTicketsList() {
     priority: null, // مقدار پیش‌فرض برای اولویت (null یعنی همه)
   });
 
-  // ✅ قدم ۲: آپدیت کردن useQuery برای کار با آبجکت فیلترها
   const { data, isLoading, isError, error } = useQuery({
     // کامنت: کلید کوئری حالا به کل آبجکت filters وابسته است.
     queryKey: ["admin", "tickets", filters],
@@ -74,7 +73,7 @@ export default function AdminTicketsList() {
       <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-start sm:items-center mb-4 border-b border-green-800 pb-4 flex-wrap">
         {/* گروه فیلتر وضعیت */}
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-sm text-gray-400">وضعیت:</span>
+          <span className="d text-sm text-gray-400">وضعیت:</span>
           <FilterButton
             onClick={() => handleFilterChange("status", "open")}
             isActive={filters.status === "open"}
@@ -91,7 +90,7 @@ export default function AdminTicketsList() {
 
         {/* گروه فیلتر اولویت */}
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-semibold text-sm text-gray-400">اولویت:</span>
+          <span className=" text-sm text-gray-400">اولویت:</span>
           <FilterButton
             onClick={() => handleFilterChange("priority", null)} // null یعنی حذف فیلتر اولویت
             isActive={filters.priority === null}
