@@ -1,6 +1,6 @@
 // کامپوننت: /components/Template/ticket/ticket.js (نسخه ادمین - اصلاح شده)
 "use client";
-import React from "react"; // ✅ ایمپورت کردن useState
+import React , { useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { listAdminTickets } from "@/lib/adminTicketsApi"; // ✅ اطمینان از مسیر صحیح
