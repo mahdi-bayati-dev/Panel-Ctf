@@ -80,7 +80,7 @@ export default function UserDetailPage() {
       <div className="w-full max-w-2xl">
         <Link
           href="/dashboard"
-          className="flex items-center gap-2 text-colorThemeLite-accent hover-text-white mb-6"
+          className="flex items-center gap-2 text-colorThemeLite-accent hover-text-white mb-6 bg-dark rounded-2xl p-1 hover:text-red-700"
         >
           <BackIcon />
           <span>بازگشت به لیست کاربران</span>
