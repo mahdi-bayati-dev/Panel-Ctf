@@ -48,7 +48,7 @@ export default function AdminTicketsList() {
       <div className="mt-4 space-y-4">
         {tickets.length > 0 ? (
           tickets.map((ticket) => (
-            <Link key={ticket.id} href={`/admin/tickets/${ticket.id}`} className="block">
+            <Link key={ticket.id} href={`/tickets/${ticket.id}`} className="block">
               <div className="grid grid-cols-2 md:grid-cols-5 items-center gap-4 rounded-2xl border border-green-800 px-4 py-4 bg-dark shadow-sm hover:bg-green-200/10 text-center text-sm">
                 
                 {/* کامنت: استفاده از Unread برای نمایش نقطه قرمز خوانده نشده */}
