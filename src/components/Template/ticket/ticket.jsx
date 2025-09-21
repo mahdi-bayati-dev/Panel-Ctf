@@ -72,7 +72,7 @@ export default function AdminTicketsList() {
               // ✅ اطمینان از مسیر صحیح لینک برای پنل ادمین
               <Link
                 key={ticket.id}
-                href={`/admin/tickets/${ticket.id}`}
+                href={`/tickets/${ticket.id}`}
                 className="block"
               >
                 <div className="grid grid-cols-2 md:grid-cols-5 items-center gap-4 rounded-2xl border border-green-800 px-4 py-4 bg-dark shadow-sm hover:bg-green-200/10 text-center text-sm">
