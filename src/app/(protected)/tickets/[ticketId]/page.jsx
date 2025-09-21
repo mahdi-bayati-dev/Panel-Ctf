@@ -30,8 +30,6 @@ export default function AdminTicketDetailsPage() {
   const [body, setBody] = useState("");
   const [files, setFiles] = useState([]); // ✅ برای پشتیبانی از چند فایل
   const fileInputRef = useRef(null);
-  // ✅ جدید: یک متغیر برای بررسی وضعیت تیکت
-  const isTicketClosed = ticket.status === "closed";
 
   // --- دریافت داده‌های تیکت با useQuery ---
   const { data, isLoading, isError, error } = useQuery({
@@ -109,6 +107,8 @@ export default function AdminTicketDetailsPage() {
     return <div className="text-red-500 p-10">خطا: {error.message}</div>;
 
   const { ticket, messages } = data;
+    // ✅ این متغیر باید اینجا تعریف شود، یعنی بعد از اینکه ticket از data استخراج شد
+  const isTicketClosed = ticket.status === "closed";
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-colorThemeDark-primary px-4">
