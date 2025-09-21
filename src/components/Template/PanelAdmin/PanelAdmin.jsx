@@ -1,113 +1,41 @@
-"use client";
-import React, { useState } from "react";
+"use client"
+// PanelAdmin.js
+import React from "react";
 import Ticket from "@/components/Template/ticket/ticket";
 import UsersPage from "../users/page";
-
-// آیکون ها
-import FaqIcon from "@/components/icons/faqIcon";
-import RulesIcon from "@/components/icons/rulesIcon";
-import ChevronIcon from "@/components/icons/ChevronIcon";
 import FAQAdmin from "@/components/Template/faq/faq";
+// کامپوننت‌های دیگر را هم در صورت نیاز وارد کنید
+// import Challenges from '...';
+// import Rules from '...';
 
-// این کامپوننت فقط مسئول نمایش UI پنل است
-export default function PanelAdmin() {
-  const [openSection, setOpenSection] = useState("users"); // بخش کاربران به صورت پیش‌فرض باز است
-
-  const toggleSection = (section) => {
-    setOpenSection(openSection === section ? null : section);
+// کامپوننت دیگر استیت داخلی ندارد و فقط یک prop به نام activeTab دریافت می‌کند
+export default function PanelAdmin({ activeTab }) {
+  // تابعی برای رندر کردن محتوای تب فعال
+  const renderContent = () => {
+    switch (activeTab) {
+      case "users":
+        return <UsersPage />;
+      case "ticket":
+        return <Ticket />;
+      case "faq":
+        return <FAQAdmin />;
+      case "challenges":
+        // کامپوننت چالش‌ها را اینجا قرار دهید
+        return <div>محتوای مربوط به چالش‌ها</div>;
+      case "rules":
+        // کامپوننت قوانین را اینجا قرار دهید
+        return <div>محتوای مربوط به قوانین</div>;
+      default:
+        // اگر هیچ تبی انتخاب نشده بود، یک پیام پیش‌فرض نشان بده
+        return <p>لطفا یک بخش را از منو انتخاب کنید.</p>;
+    }
   };
 
   return (
-    <div className="m-2 space-y-4 w-full max-w-md sm:max-w-lg md:max-w-5xl">
-      {/* کاربران */}
-      <div className="flex flex-col gap-2 rounded-lg bg-dark p-5 text-white border border-colorThemeLite-green">
-        <div
-          className="flex cursor-pointer items-center justify-between"
-          onClick={() => toggleSection("Users")}
-        >
-          <h2 className="flex gap-2 items-center text-colorThemeLite-accent text-base font-bold text-center">
-            <RulesIcon />
-            کاربران
-          </h2>
-          <ChevronIcon
-            className={`h-5 w-5 text-white transition-transform duration-500 ${
-              openSection === "Users" ? "rotate-180" : ""
-            }`}
-          />
-        </div>
-        <div
-          className={`grid transition-all duration-500 ease-in-out ${
-            openSection === "Users"
-              ? "grid-rows-[1fr] opacity-100"
-              : "grid-rows-[0fr] opacity-0"
-          }`}
-        >
-          <div className="overflow-hidden">
-            {/* کامپوننت لیست کاربران در اینجا قرار می‌گیرد */}
-            <UsersPage/>
-          </div>
-        </div>
-      </div>
-
-      {/* تیکت ها */}
-      <div className="flex flex-col gap-2 rounded-lg bg-dark p-5 text-white border border-colorThemeLite-green">
-        <div
-          className="flex cursor-pointer items-center justify-between"
-          onClick={() => toggleSection("ticket")}
-        >
-          <h2 className="flex gap-2 items-center text-colorThemeLite-accent text-base font-bold">
-            <FaqIcon />
-            تیکت ها
-          </h2>
-          <ChevronIcon
-            className={`h-5 w-5 text-white transition-transform duration-500 ${
-              openSection === "ticket" ? "rotate-180" : ""
-            }`}
-          />
-        </div>
-        <div
-          className={`grid transition-all duration-500 ease-in-out ${
-            openSection === "ticket"
-              ? "grid-rows-[1fr] opacity-100"
-              : "grid-rows-[0fr] opacity-0"
-          }`}
-        >
-          <div className="overflow-hidden">
-            {/* کامپوننت تیکت‌ها در اینجا قرار می‌گیرد */}
-            <Ticket />
-          </div>
-        </div>
-      </div>
-
-      {/* سوالات متداول */}
-      <div className="flex flex-col gap-2 rounded-lg bg-dark p-5 text-white border border-colorThemeLite-green">
-        <div
-          className="flex cursor-pointer items-center justify-between"
-          onClick={() => toggleSection("faq")}
-        >
-          <h2 className="flex gap-2 items-center text-colorThemeLite-accent text-base font-bold">
-            <FaqIcon />
-            سوالات متداول
-          </h2>
-          <ChevronIcon
-            className={`h-5 w-5 text-white transition-transform duration-500 ${
-              openSection === "faq" ? "rotate-180" : ""
-            }`}
-          />
-        </div>
-        <div
-          className={`grid transition-all duration-500 ease-in-out ${
-            openSection === "faq"
-              ? "grid-rows-[1fr] opacity-100"
-              : "grid-rows-[0fr] opacity-0"
-          }`}
-        >
-          <div className="overflow-hidden">
-            {/* کامپوننت سوالات متداول در اینجا قرار می‌گیرد */}
-            <FAQAdmin />
-          </div>
-        </div>
-      </div>
+    // یک کانتینر ثابت برای نمایش محتوا که استایل‌های قبلی را دارد
+    <div className="w-full rounded-lg bg-dark p-5 text-white border border-colorThemeLite-green">
+      {/* محتوای تب فعال در اینجا رندر می‌شود */}
+      {renderContent()}
     </div>
   );
 }
