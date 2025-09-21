@@ -210,6 +210,7 @@ export default function AdminTicketDetailsPage() {
             <div className="text-center p-3 mb-2 bg-yellow-900/50 text-yellow-300 text-sm rounded-lg">
               این تیکت بسته شده است و امکان ارسال پیام جدید وجود ندارد.
             </div>
+            
           )}
           <div className="flex flex-col items-center gap-2 border border-colorThemeLite-green rounded-2xl">
             <div className="flex justify-between w-full px-3 py-1 border-b border-colorThemeLite-green">
