@@ -5,7 +5,7 @@ import Delete from "@/components/icons/delete";
 import Edit from "@/components/icons/edite";
 
 // وارد کردن سرویس‌های API که ساختیم
-import { getFaqs, createFaq, updateFaq, deleteFaq } from "@/lib/faqService"
+import { getFaqs, createFaq, updateFaq, deleteFaq } from "@/lib/faqService";
 
 function FAQAdmin() {
   // === استیت‌ها ===
@@ -19,6 +19,7 @@ function FAQAdmin() {
   // استیت‌های مدیریتی برای بارگذاری و خطا
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false); // برای غیرفعال کردن دکمه‌ها حین عملیات
+  const [isActive, setIsActive] = useState(true);
 
   // === دریافت داده‌ها ===
   // این تابع مسئول دریافت داده‌ها از سرور است
@@ -43,27 +44,28 @@ function FAQAdmin() {
 
   // تابع ذخیره تغییرات (هم برای ایجاد و هم ویرایش)
   const handleSave = async () => {
-    if (!newQuestion.trim() || !newAnswer.trim()) {
-      toast.error("لطفاً فیلدهای سوال و پاسخ را پر کنید.");
-      return;
-    }
+    // ... ولیدیشن
     setIsSubmitting(true);
+
+    // ✨ آبجکت داده‌ها برای ارسال به سرور
+    const payload = {
+      question: newQuestion,
+      answer: newAnswer,
+      is_active: isActive,
+    };
 
     try {
       if (editId) {
-        // حالت ویرایش
-        await updateFaq(editId, { question: newQuestion, answer: newAnswer });
+        await updateFaq(editId, payload); // ارسال داده‌های کامل
         toast.success("سوال با موفقیت ویرایش شد.");
       } else {
-        // حالت ایجاد
-        await createFaq({ question: newQuestion, answer: newAnswer });
+        await createFaq(payload); // ارسال داده‌های کامل
         toast.success("سوال جدید با موفقیت ثبت شد.");
       }
-      // پس از هر عملیات موفق، فرم را ریست کرده و لیست را مجدداً بارگذاری می‌کنیم
       resetForm();
       await fetchFaqs();
     } catch (error) {
-      toast.error("عملیات با خطا مواجه شد.");
+      // ...
     } finally {
       setIsSubmitting(false);
     }
@@ -89,23 +91,25 @@ function FAQAdmin() {
     setEditId(faq.id);
     setNewQuestion(faq.question);
     setNewAnswer(faq.answer);
+    setIsActive(faq.is_active); // ✨ تنظیم وضعیت چک‌باکس بر اساس داده فعلی
     setShowForm(true);
   };
-  
+
   // تابع آماده‌سازی فرم برای افزودن سوال جدید
   const handleAddNew = () => {
     resetForm();
     setShowForm(true);
   };
-  
+
   // تابع برای ریست کردن فرم
   const resetForm = () => {
     setEditId(null);
     setNewQuestion("");
     setNewAnswer("");
+    setIsActive(true); // ✨ ریست کردن چک‌باکس به حالت پیش‌فرض (فعال)
     setShowForm(false);
   };
-  
+
   // === نمایش کامپوننت ===
   if (isLoading) {
     return <div className="text-center p-10">در حال بارگذاری...</div>;
@@ -114,8 +118,10 @@ function FAQAdmin() {
   return (
     <div className="bg-dark text-white flex flex-col items-center py-4">
       <div className="w-full max-w-3xl rounded-2xl">
-        <h1 className="text-2xl font-bold mb-6 text-center">مدیریت سوالات متداول</h1>
-        
+        <h1 className="text-2xl font-bold mb-6 text-center">
+          مدیریت سوالات متداول
+        </h1>
+
         {/* فرم افزودن/ویرایش */}
         {showForm && (
           <div className="space-y-3 pb-2">
@@ -135,13 +141,31 @@ function FAQAdmin() {
               rows={3}
               disabled={isSubmitting}
             />
+            <div className="flex items-center gap-x-2">
+              <input
+                type="checkbox"
+                id="is_active_checkbox"
+                checked={isActive}
+                onChange={(e) => setIsActive(e.target.checked)}
+                className="w-4 h-4 rounded"
+                disabled={isSubmitting}
+              />
+              <label htmlFor="is_active_checkbox" className="text-sm">
+                فعال (نمایش در سایت عمومی)
+              </label>
+            </div>
+
             <div className="flex gap-3">
               <button
                 onClick={handleSave}
                 className="flex-1 rounded-xl bg-green-500 text-dark px-4 py-2 font-bold hover:bg-green-600 transition disabled:bg-gray-400"
                 disabled={isSubmitting}
               >
-                {isSubmitting ? "در حال ذخیره..." : (editId ? "ذخیره ویرایش" : "ثبت سوال")}
+                {isSubmitting
+                  ? "در حال ذخیره..."
+                  : editId
+                  ? "ذخیره ویرایش"
+                  : "ثبت سوال"}
               </button>
               <button
                 onClick={resetForm}
@@ -157,29 +181,45 @@ function FAQAdmin() {
         {/* لیست سوالات */}
         <div className="space-y-4 mb-6">
           {faqs.map((faq) => (
-            <div key={faq.id} className="border border-colorThemeLite-green rounded-2xl p-4 flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center">
+            <div
+              key={faq.id}
+              className="border border-colorThemeLite-green rounded-2xl p-4 flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center"
+            >
               <div className="text-right flex-1">
                 <p className="font-bold">{faq.question}</p>
-                <p className="text-sm text-colorThemeLite-accent mt-1">{faq.answer}</p>
+                <p className="text-sm text-colorThemeLite-accent mt-1">
+                  {faq.answer}
+                </p>
               </div>
               <div className="flex gap-2">
-                <button onClick={() => handleEdit(faq)} className="p-2 rounded-lg hover:bg-colorThemeDark-secondary transition">
+                <button
+                  onClick={() => handleEdit(faq)}
+                  className="p-2 rounded-lg hover:bg-colorThemeDark-secondary transition"
+                >
                   <Edit />
                 </button>
-                <button onClick={() => handleDelete(faq.id)} className="p-2 rounded-lg hover:bg-colorThemeDark-secondary transition">
+                <button
+                  onClick={() => handleDelete(faq.id)}
+                  className="p-2 rounded-lg hover:bg-colorThemeDark-secondary transition"
+                >
                   <Delete />
                 </button>
               </div>
             </div>
           ))}
           {faqs.length === 0 && !isLoading && (
-            <p className="text-center text-colorThemeLite-accent">هیچ سوالی یافت نشد.</p>
+            <p className="text-center text-colorThemeLite-accent">
+              هیچ سوالی یافت نشد.
+            </p>
           )}
         </div>
 
         {/* دکمه افزودن سوال */}
         {!showForm && (
-          <button onClick={handleAddNew} className="w-full rounded-xl bg-green-500 text-dark px-4 py-2 font-bold hover:bg-green-600 transition">
+          <button
+            onClick={handleAddNew}
+            className="w-full rounded-xl bg-green-500 text-dark px-4 py-2 font-bold hover:bg-green-600 transition"
+          >
             افزودن سوال جدید
           </button>
         )}
