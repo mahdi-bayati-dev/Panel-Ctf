@@ -4,33 +4,30 @@ import toast from "react-hot-toast";
 import TikIcon from "@/components/icons/tik";
 import BackIcon from "@/components/icons/back";
 import RulesIcon from "@/components/icons/rulesIcon";
-// ✨ هر دو تابع create و update را وارد می‌کنیم
-import { getRules, updateRule, createRule } from "@/lib/rulesService"
+import { getRules, updateRule, createRule } from "@/lib/rulesService";
 
 function Rules() {
-  // === استیت‌ها ===
-  const [title, setTitle] = useState(""); // ✨ استیت برای عنوان قانون
+  // === استیت‌ها (بدون تغییر) ===
+  const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [ruleId, setRuleId] = useState(null); // اگر null باشد یعنی در حالت "ایجاد" هستیم
+  const [ruleId, setRuleId] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // === دریافت داده‌ها ===
+  // === دریافت داده‌ها (بدون تغییر) ===
   const fetchRuleContent = useCallback(async () => {
     setIsLoading(true);
     try {
       const rulesList = await getRules();
       if (rulesList && rulesList.length > 0) {
-        // اگر قانونی وجود داشت، وارد حالت "ویرایش" می‌شویم
         const firstRule = rulesList[0];
         setTitle(firstRule.title);
         setContent(firstRule.content);
         setRuleId(firstRule.id);
       } else {
-        // ✨ اگر قانونی وجود نداشت، فرم را برای "ایجاد" آماده می‌کنیم
-        setTitle(""); // عنوان خالی برای قانون جدید
-        setContent(""); // محتوای خالی
-        setRuleId(null); // اطمینان از اینکه در حالت ایجاد هستیم
+        setTitle("");
+        setContent("");
+        setRuleId(null);
       }
     } catch (error) {
       setContent("خطا در بارگذاری قوانین.");
@@ -44,6 +41,7 @@ function Rules() {
   }, [fetchRuleContent]);
 
   // === تابع هوشمند ذخیره (ایجاد یا ویرایش) ===
+  // ✨✨✨ تغییر اصلی اینجاست ✨✨✨
   const handleSave = async () => {
     // ولیدیشن ساده
     if (!title.trim() || !content.trim()) {
@@ -54,26 +52,45 @@ function Rules() {
     setIsSubmitting(true);
     try {
       if (ruleId) {
-        // ✨ حالت ویرایش: اگر ruleId وجود دارد، update می‌کنیم
+        // حالت ویرایش مثل قبل باقی می‌ماند
         await updateRule(ruleId, { title, content });
-      } else {
-        // ✨ حالت ایجاد: اگر ruleId وجود ندارد، create می‌کنیم
-        await createRule({ title, content });
-        // ✨ نکته مهم: پس از ایجاد موفق، داده‌ها را مجدد فراخوانی می‌کنیم
-        // تا کامپوننت ID قانون جدید را دریافت کند و به حالت ویرایش برود.
+        // بعد از ویرایش، داده‌ها را بازخوانی می‌کنیم تا از صحت آن مطمئن شویم
         await fetchRuleContent();
+        toast.success("قوانین با موفقیت به‌روزرسانی شد!");
+      } else {
+        // --- شروع تغییرات در حالت ایجاد ---
+
+        // ۱. قانون جدید را ایجاد می‌کنیم و منتظر می‌مانیم تا سرور
+        // آبجکت قانون ساخته شده (با title, content, id) را برگرداند.
+        const newRule = await createRule({ title, content });
+
+        // ۲. حالا به جای فراخوانی دوباره‌ی getRules، مستقیماً از آبجکت newRule
+        // برای آپدیت کردن state استفاده می‌کنیم.
+        if (newRule && newRule.id) {
+          setTitle(newRule.title);
+          setContent(newRule.content);
+          setRuleId(newRule.id);
+        } else {
+          // اگر به هر دلیلی سرور آبجکت را برنگرداند، از روش قبلی استفاده می‌کنیم
+          // تا برنامه دچار خطا نشود.
+          await fetchRuleContent();
+        }
+        // --- پایان تغییرات ---
       }
+    } catch (error) {
+      console.error("خطا در عملیات ذخیره‌سازی:", error);
+      toast.error("عملیات ذخیره‌سازی ناموفق بود.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  // === بخش JSX و نمایش (بدون تغییر) ===
   return (
     <div className="bg-dark min-h-screen flex flex-col p-6 pt-0">
       <header className="flex items-center gap-x-3 border-b border-colorThemeLite-green pb-4 mb-6">
         <RulesIcon className="text-green-400 w-7 h-7" />
         <h1 className="text-2xl font-bold text-colorThemeLite-accent">
-          {/* عنوان صفحه بر اساس حالت تغییر می‌کند */}
           {ruleId ? "ویرایش قوانین" : "ایجاد قانون جدید"}
         </h1>
       </header>
@@ -89,7 +106,6 @@ function Rules() {
             <p className="text-center">در حال بارگذاری...</p>
           ) : (
             <div className="space-y-4">
-              {/* ✨ فیلد ورودی برای عنوان */}
               <div>
                 <label
                   htmlFor="rules_title"
@@ -107,7 +123,6 @@ function Rules() {
                 />
               </div>
 
-              {/* ✨ فیلد ورودی برای محتوا */}
               <div>
                 <label
                   htmlFor="rules_content"
