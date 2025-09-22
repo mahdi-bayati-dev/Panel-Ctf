@@ -1,13 +1,9 @@
 // src/services/rulesService.js
-
-// کامنت فارسی: این فایل برای مدیریت درخواست‌های API مربوط به قوانین سایت است.
-
 import apiClient from "@/lib/axios";
 import toast from "react-hot-toast";
 
 /**
  * دریافت لیست تمام قوانین از سرور
- * @returns {Promise<Array>} لیستی از آبجکت‌های قوانین
  */
 export const getRules = async () => {
   try {
@@ -21,10 +17,25 @@ export const getRules = async () => {
 };
 
 /**
+ * ✨ تابع جدید: ایجاد یک قانون جدید
+ * @param {object} ruleData - داده‌های قانون جدید شامل { title, content }
+ */
+export const createRule = async (ruleData) => {
+  try {
+    const response = await apiClient.post("/api/admin/content", ruleData);
+    toast.success("قانون جدید با موفقیت ایجاد شد!");
+    return response.data;
+  } catch (error) {
+    toast.error("خطا در ایجاد قانون جدید.");
+    console.error("خطا در ایجاد قانون:", error);
+    throw error;
+  }
+};
+
+/**
  * ویرایش یک قانون موجود
  * @param {number} id - شناسه قانونی که باید ویرایش شود
- * @param {object} ruleData - داده‌های به‌روز شده شامل { title, content }
- * @returns {Promise<object>} آبجکت قانون ویرایش شده
+ * @param {object} ruleData - داده‌های به‌روز شده
  */
 export const updateRule = async (id, ruleData) => {
   try {
