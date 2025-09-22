@@ -1,87 +1,121 @@
 "use client";
+import React, { useState, useEffect, useCallback } from "react";
+import toast from "react-hot-toast";
 import Delete from "@/components/icons/delete";
 import Edit from "@/components/icons/edite";
-import React, { useState } from "react";
+
+// وارد کردن سرویس‌های API که ساختیم
+import { getFaqs, createFaq, updateFaq, deleteFaq } from "@/lib/faqService"
 
 function FAQAdmin() {
-  const [faqs, setFaqs] = useState([
-    {
-      id: 1,
-      question: "چطور در سایت ثبت‌نام کنم؟",
-      answer:
-        "Lorem ipsum dolor sit amet consectetur adipisicing elit. Facere, praesentium. Sed voluptatem porro laboriosam culpa, soluta nam labore asperiores ex alias hic natus rem, dolor incidunt distinctio ipsam minima eum! Commodi, non quaerat! Vero eligendi fugiat et magnam maiores nulla neque dicta possimus repellat nisi nihil, consequatur, laboriosam doloremque quas error inventore consectetur deserunt voluptate quos! Fugit dolores possimus nihil maxime quidem asperiores cumque, eveniet labore iste facilis quisquam ad id praesentium, quam sequi magni reprehenderit saepe placeat laborum quis tempore? Iste assumenda voluptates soluta architecto sapiente aspernatur, obcaecati suscipit quasi culpa natus quidem mollitia numquam inventore, sint, laborum veniam!",
-    },
-    {
-      id: 2,
-      question: "چگونه رمز عبورم را بازیابی کنم؟",
-      answer: "به بخش فراموشی رمز عبور بروید و ایمیل خود را وارد کنید.",
-    },
-    {
-      id: 3,
-      question: "آیا امکان تغییر نام کاربری وجود دارد؟",
-      answer: "بله، از بخش تنظیمات حساب کاربری.",
-    },
-  ]);
-
-  // استیت‌ها
+  // === استیت‌ها ===
+  // استیت اصلی برای نگهداری لیست سوالات
+  const [faqs, setFaqs] = useState([]);
+  // استیت برای مدیریت فرم افزودن/ویرایش
   const [newQuestion, setNewQuestion] = useState("");
   const [newAnswer, setNewAnswer] = useState("");
-  const [editId, setEditId] = useState(null);
+  const [editId, setEditId] = useState(null); // اگر در حال ویرایش باشیم، ID اینجا ذخیره می‌شود
   const [showForm, setShowForm] = useState(false);
+  // استیت‌های مدیریتی برای بارگذاری و خطا
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false); // برای غیرفعال کردن دکمه‌ها حین عملیات
 
-  // ذخیره تغییرات
-  const handleSave = () => {
-    if (!newQuestion.trim() || !newAnswer.trim()) return;
-
-    if (editId) {
-      setFaqs(
-        faqs.map((faq) =>
-          faq.id === editId
-            ? { ...faq, question: newQuestion, answer: newAnswer }
-            : faq
-        )
-      );
-    } else {
-      setFaqs([
-        ...faqs,
-        { id: Date.now(), question: newQuestion, answer: newAnswer },
-      ]);
+  // === دریافت داده‌ها ===
+  // این تابع مسئول دریافت داده‌ها از سرور است
+  const fetchFaqs = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const data = await getFaqs();
+      setFaqs(data);
+    } catch (error) {
+      toast.error("خطا در دریافت لیست سوالات.");
+    } finally {
+      setIsLoading(false);
     }
+  }, []);
 
-    // ریست
-    setEditId(null);
-    setNewQuestion("");
-    setNewAnswer("");
-    setShowForm(false);
+  // با استفاده از useEffect، داده‌ها را فقط یک بار پس از رندر اولیه کامپوننت دریافت می‌کنیم
+  useEffect(() => {
+    fetchFaqs();
+  }, [fetchFaqs]);
+
+  // === توابع مدیریتی (Handlers) ===
+
+  // تابع ذخیره تغییرات (هم برای ایجاد و هم ویرایش)
+  const handleSave = async () => {
+    if (!newQuestion.trim() || !newAnswer.trim()) {
+      toast.error("لطفاً فیلدهای سوال و پاسخ را پر کنید.");
+      return;
+    }
+    setIsSubmitting(true);
+
+    try {
+      if (editId) {
+        // حالت ویرایش
+        await updateFaq(editId, { question: newQuestion, answer: newAnswer });
+        toast.success("سوال با موفقیت ویرایش شد.");
+      } else {
+        // حالت ایجاد
+        await createFaq({ question: newQuestion, answer: newAnswer });
+        toast.success("سوال جدید با موفقیت ثبت شد.");
+      }
+      // پس از هر عملیات موفق، فرم را ریست کرده و لیست را مجدداً بارگذاری می‌کنیم
+      resetForm();
+      await fetchFaqs();
+    } catch (error) {
+      toast.error("عملیات با خطا مواجه شد.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  // حذف
-  const handleDelete = (id) => {
-    setFaqs(faqs.filter((faq) => faq.id !== id));
+  // تابع حذف یک سوال
+  const handleDelete = async (id) => {
+    // نکته مهم: بهتر است قبل از حذف، از کاربر تاییدیه بگیریم
+    if (window.confirm("آیا از حذف این سوال مطمئن هستید؟")) {
+      try {
+        await deleteFaq(id);
+        toast.success("سوال با موفقیت حذف شد.");
+        // به جای دریافت مجدد کل لیست، آیتم حذف شده را به صورت محلی از استیت حذف می‌کنیم (بهینه‌تر است)
+        setFaqs((prevFaqs) => prevFaqs.filter((faq) => faq.id !== id));
+      } catch (error) {
+        toast.error("خطا در حذف سوال.");
+      }
+    }
   };
 
-  // ویرایش
+  // تابع آماده‌سازی فرم برای ویرایش
   const handleEdit = (faq) => {
     setEditId(faq.id);
     setNewQuestion(faq.question);
     setNewAnswer(faq.answer);
     setShowForm(true);
   };
-
-  // شروع افزودن سوال
+  
+  // تابع آماده‌سازی فرم برای افزودن سوال جدید
   const handleAddNew = () => {
+    resetForm();
+    setShowForm(true);
+  };
+  
+  // تابع برای ریست کردن فرم
+  const resetForm = () => {
     setEditId(null);
     setNewQuestion("");
     setNewAnswer("");
-    setShowForm(true);
+    setShowForm(false);
   };
+  
+  // === نمایش کامپوننت ===
+  if (isLoading) {
+    return <div className="text-center p-10">در حال بارگذاری...</div>;
+  }
 
   return (
-    <div className=" bg-dark text-white flex flex-col items-center py-4  ">
-      <div className="w-full max-w-3xl  rounded-2xl ">
-        <h1 className="text-2xl font-bold mb-6 text-center">
-          مدیریت سوالات متداول
-        </h1>
+    <div className="bg-dark text-white flex flex-col items-center py-4">
+      <div className="w-full max-w-3xl rounded-2xl">
+        <h1 className="text-2xl font-bold mb-6 text-center">مدیریت سوالات متداول</h1>
+        
         {/* فرم افزودن/ویرایش */}
         {showForm && (
           <div className="space-y-3 pb-2">
@@ -91,6 +125,7 @@ function FAQAdmin() {
               value={newQuestion}
               onChange={(e) => setNewQuestion(e.target.value)}
               className="w-full rounded-xl px-4 py-2 bg-dark border border-colorThemeLite-green focus:outline-none focus:ring-2 focus:ring-colorThemeLite-green"
+              disabled={isSubmitting}
             />
             <textarea
               placeholder="پاسخ..."
@@ -98,17 +133,20 @@ function FAQAdmin() {
               onChange={(e) => setNewAnswer(e.target.value)}
               className="w-full rounded-xl px-4 py-2 bg-dark border border-colorThemeLite-green focus:outline-none focus:ring-2 focus:ring-colorThemeLite-green"
               rows={3}
+              disabled={isSubmitting}
             />
             <div className="flex gap-3">
               <button
                 onClick={handleSave}
-                className="flex-1 rounded-xl bg-green-500 text-dark px-4 py-2 font-bold hover:bg-green-600 transition"
+                className="flex-1 rounded-xl bg-green-500 text-dark px-4 py-2 font-bold hover:bg-green-600 transition disabled:bg-gray-400"
+                disabled={isSubmitting}
               >
-                {editId ? "ذخیره ویرایش" : "ثبت سوال"}
+                {isSubmitting ? "در حال ذخیره..." : (editId ? "ذخیره ویرایش" : "ثبت سوال")}
               </button>
               <button
-                onClick={() => setShowForm(false)}
+                onClick={resetForm}
                 className="flex-1 rounded-xl bg-gray-500 text-white px-4 py-2 font-bold hover:bg-gray-600 transition"
+                disabled={isSubmitting}
               >
                 لغو
               </button>
@@ -119,46 +157,29 @@ function FAQAdmin() {
         {/* لیست سوالات */}
         <div className="space-y-4 mb-6">
           {faqs.map((faq) => (
-            <div
-              key={faq.id}
-              className="border border-colorThemeLite-green rounded-2xl p-4 flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center"
-            >
-              <div className="text-right">
+            <div key={faq.id} className="border border-colorThemeLite-green rounded-2xl p-4 flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center">
+              <div className="text-right flex-1">
                 <p className="font-bold">{faq.question}</p>
-                <p className="text-sm text-colorThemeLite-accent mt-1">
-                  {faq.answer}
-                </p>
+                <p className="text-sm text-colorThemeLite-accent mt-1">{faq.answer}</p>
               </div>
               <div className="flex gap-2">
-                <button
-                  onClick={() => handleEdit(faq)}
-                  className="px-3 py-1 rounded-lg  text-dark font-bold hover:bg-colorThemeDark-secondary transition"
-                >
+                <button onClick={() => handleEdit(faq)} className="p-2 rounded-lg hover:bg-colorThemeDark-secondary transition">
                   <Edit />
                 </button>
-                <button
-                  onClick={() => handleDelete(faq.id)}
-                  className="px-3 py-1 rounded-lg hover:bg-colorThemeDark-secondary transition"
-                >
+                <button onClick={() => handleDelete(faq.id)} className="p-2 rounded-lg hover:bg-colorThemeDark-secondary transition">
                   <Delete />
                 </button>
               </div>
             </div>
           ))}
-
-          {faqs.length === 0 && (
-            <p className="text-center text-colorThemeLite-accent">
-              هیچ سوالی موجود نیست.
-            </p>
+          {faqs.length === 0 && !isLoading && (
+            <p className="text-center text-colorThemeLite-accent">هیچ سوالی یافت نشد.</p>
           )}
         </div>
 
         {/* دکمه افزودن سوال */}
         {!showForm && (
-          <button
-            onClick={handleAddNew}
-            className="w-full rounded-xl bg-green-500 text-dark px-4 py-2 font-bold hover:bg-green-600 transition"
-          >
+          <button onClick={handleAddNew} className="w-full rounded-xl bg-green-500 text-dark px-4 py-2 font-bold hover:bg-green-600 transition">
             افزودن سوال جدید
           </button>
         )}
