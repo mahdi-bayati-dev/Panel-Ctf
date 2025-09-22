@@ -4,6 +4,7 @@ import React from "react";
 import Ticket from "@/components/Template/ticket/ticket";
 import UsersPage from "../users/page";
 import FAQAdmin from "@/components/Template/faq/faq";
+import Rules from "../rules/rules";
 // کامپوننت‌های دیگر را هم در صورت نیاز وارد کنید
 // import Challenges from '...';
 // import Rules from '...';
@@ -24,7 +25,7 @@ export default function PanelAdmin({ activeTab }) {
         return <div>محتوای مربوط به چالش‌ها</div>;
       case "rules":
         // کامپوننت قوانین را اینجا قرار دهید
-        return <div>محتوای مربوط به قوانین</div>;
+        return <Rules/>;
       default:
         // اگر هیچ تبی انتخاب نشده بود، یک پیام پیش‌فرض نشان بده
         return <p>لطفا یک بخش را از منو انتخاب کنید.</p>;
