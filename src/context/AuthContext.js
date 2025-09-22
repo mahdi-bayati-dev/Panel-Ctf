@@ -28,7 +28,6 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error("Failed to fetch user.", error);
       // اگر اینجا خطا بگیریم، یعنی توکن نامعتبر است و باید خارج شویم
-      logout();
     }
   }, []); // وابستگی logout حذف شد تا از حلقه بی‌نهایت جلوگیری شود
 
