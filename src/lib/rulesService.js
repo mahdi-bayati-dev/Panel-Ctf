@@ -8,6 +8,8 @@ import toast from "react-hot-toast";
 export const getRules = async () => {
   try {
     const response = await apiClient.get("/api/admin/content");
+    console.log(response);
+    console.log(response.data);
     return response.data;
   } catch (error) {
     toast.error("خطا در دریافت قوانین سایت.");
@@ -23,6 +25,9 @@ export const getRules = async () => {
 export const createRule = async (ruleData) => {
   try {
     const response = await apiClient.post("/api/admin/content", ruleData);
+    console.log(response);
+    console.log(response.data);
+
     toast.success("قانون جدید با موفقیت ایجاد شد!");
     return response.data;
   } catch (error) {
@@ -40,6 +45,8 @@ export const createRule = async (ruleData) => {
 export const updateRule = async (id, ruleData) => {
   try {
     const response = await apiClient.put(`/api/admin/content/${id}`, ruleData);
+    console.log(response);
+    console.log(response.data);
     toast.success("قوانین با موفقیت به‌روزرسانی شد!");
     return response.data;
   } catch (error) {
