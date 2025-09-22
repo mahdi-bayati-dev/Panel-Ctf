@@ -1,10 +1,10 @@
-"use client";
+// context/AuthContext.js
 
+"use client";
 import { createContext, useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import apiClient, { setGetAccessToken } from "../lib/axios";
 import toast from "react-hot-toast";
-import { getCookie } from "@/utils/utils";
 
 const AuthContext = createContext(null);
 
@@ -14,122 +14,109 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  const setToken = useCallback((tokenData) => {
-    const token = tokenData?.access_token || null;
+  // تابع برای تنظیم توکن در state و هدرهای پیش‌فرض axios
+  const setToken = useCallback((token) => {
     setAccessToken(token);
-    if (token) {
-      apiClient.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-    } else {
-      delete apiClient.defaults.headers.common["Authorization"];
-    }
+    apiClient.defaults.headers.common["Authorization"] = `Bearer ${token}`;
   }, []);
 
+  // تابع دریافت اطلاعات کاربر
   const fetchUser = useCallback(async () => {
-    console.log("AUTH_CONTEXT: Fetching user data...");
     try {
       const { data } = await apiClient.get("/api/admin/me");
       setUser(data);
-      console.log("AUTH_CONTEXT_FETCH_SUCCESS: User data fetched.", data);
-      return data;
     } catch (error) {
-      console.error("AUTH_CONTEXT_FETCH_FAILED.", error);
-      throw error;
+      console.error("Failed to fetch user.", error);
+      // اگر اینجا خطا بگیریم، یعنی توکن نامعتبر است و باید خارج شویم
+      logout();
     }
-  }, []);
+  }, []); // وابستگی logout حذف شد تا از حلقه بی‌نهایت جلوگیری شود
 
+  // تابع لاگین دقیقاً طبق داکیومنت
   const login = async ({ username, password }) => {
-    console.log("AUTH_CONTEXT_LOGIN: Attempting login...");
     try {
       const response = await apiClient.post("/api/admin/login", {
         username,
         password,
       });
-      console.log("AUTH_CONTEXT_LOGIN_SUCCESS.");
-      const tokenData = response.data;
-      setToken(tokenData);
+
+      const { access_token } = response.data;
+      setToken(access_token); // توکن را در مموری (state) ذخیره می‌کنیم
+
       await fetchUser();
       router.push("/dashboard");
       toast.success("خوش آمدید!");
     } catch (error) {
-      console.error(
-        "AUTH_CONTEXT_LOGIN_FAILED:",
-        error.response?.data || error.message
-      );
+      console.error("LOGIN_FAILED:", error.response?.data);
       toast.error(
         error.response?.data?.message || "نام کاربری یا رمز عبور اشتباه است."
       );
     }
   };
 
-  const logout = useCallback(async () => {
-    console.log("AUTH_CONTEXT_LOGOUT: Logging out...");
+  // تابع لاگ‌اوت
+  const logout = useCallback(() => {
+    console.log("LOGGING_OUT...");
     setUser(null);
     setAccessToken(null);
     delete apiClient.defaults.headers.common["Authorization"];
-    try {
-      await apiClient.post("/api/admin/logout", {});
-      console.log("AUTH_CONTEXT_LOGOUT: API call successful.");
-    } catch (error) {
-      console.error("AUTH_CONTEXT_LOGOUT_API_FAILED:", error);
-    } finally {
-      router.push("/login");
-      console.log(
-        "AUTH_CONTEXT_LOGOUT: Client-side state cleared and redirected."
-      );
-    }
+
+    // درخواست به سرور برای پاک کردن کوکی‌ها (این بخش اختیاری است ولی توصیه می‌شود)
+    apiClient
+      .post("/api/admin/logout")
+      .catch((err) => console.error("Logout API call failed", err));
+
+    router.push("/login");
   }, [router]);
 
-  // *** راه‌حل نهایی: اصلاح useEffect اصلی ***
+  // لاگین خودکار با استفاده از رفرش توکن در اولین بارگذاری
   useEffect(() => {
     const tryAutoLogin = async () => {
-      console.log("AUTH_CONTEXT_AUTOLOGIN: Trying to auto-login...");
-      const csrfCookie = getCookie("ADMIN_CSRF");
-
+      // چون کوکی RT از نوع HttpOnly است، ما فقط وجود کوکی CSRF را چک می‌کنیم
+      // که نشان‌دهنده یک جلسه قبلی است.
+      const csrfCookie = document.cookie.includes("ADMIN_CSRF=");
       if (!csrfCookie) {
-        console.log("AUTH_CONTEXT_AUTOLOGIN: No CSRF cookie. Skipping.");
         setLoading(false);
         return;
       }
 
+      // رهگیر axios بقیه کارها را انجام می‌دهد.
+      // ما فقط یک درخواست محافظت‌شده ارسال می‌کنیم تا ببینیم لاگین هستیم یا نه.
       try {
-        console.log(
-          "AUTH_CONTEXT_AUTOLOGIN: CSRF cookie found. Refreshing token..."
-        );
-        const { data: tokenData } = await apiClient.post(
-          "/api/admin/refresh",
-          {},
-          { headers: { "X-ADMIN-CSRF": csrfCookie } }
-        );
-        console.log("AUTH_CONTEXT_AUTOLOGIN_SUCCESS: Token refreshed.");
-        setToken(tokenData);
         await fetchUser();
-      } catch (error) {
-        console.warn("AUTH_CONTEXT_AUTOLOGIN_FAILED:", error.response?.data);
-        setUser(null);
-        setAccessToken(null);
+      } catch (err) {
+        // اگر fetchUser شکست بخورد، رهگیر axios تلاش به رفرش می‌کند
+        // اگر رفرش هم شکست بخورد، کاربر logout می‌شود
+        console.log("Auto-login failed.");
       } finally {
-        console.log(
-          "AUTH_CONTEXT_AUTOLOGIN: Finished. Loading state is now false."
-        );
         setLoading(false);
       }
     };
 
     tryAutoLogin();
-  }, []); // <-- آرایه وابستگی باید خالی باشد تا فقط یک بار اجرا شود
+  }, [fetchUser]);
 
+  // این useEffect برای همگام‌سازی توکن با رهگیر axios است
   useEffect(() => {
     setGetAccessToken(() => accessToken);
   }, [accessToken]);
 
+  // این useEffect برای مدیریت رویدادهای سراسری است
   useEffect(() => {
-    const handleLogout = () => {
-      console.log("AUTH_CONTEXT_EVENT: 'logout' event received.");
-      logout();
+    const handleLogout = () => logout();
+    const handleTokenRefreshed = (event) => {
+      console.log("Context: Handling tokenRefreshed event.");
+      setToken(event.detail.access_token);
     };
+
     window.addEventListener("logout", handleLogout);
-    return () => window.removeEventListener("logout", handleLogout);
-  }, [logout]);
+    window.addEventListener("tokenRefreshed", handleTokenRefreshed);
+
+    return () => {
+      window.removeEventListener("logout", handleLogout);
+      window.removeEventListener("tokenRefreshed", handleTokenRefreshed);
+    };
+  }, [logout, setToken]);
 
   return (
     <AuthContext.Provider

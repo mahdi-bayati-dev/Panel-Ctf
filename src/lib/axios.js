@@ -1,14 +1,15 @@
-// lib/axios.js or wherever apiClient is defined
-import axios from "axios";
-import { getCookie } from "@/utils/utils";
+// lib/axios.js
 
-// لاگ برای اطمینان از خوانده شدن صحیح آدرس API از متغیرهای محیطی
+import axios from "axios";
+import { getCookie } from "@/utils/utils"; // تابع getCookie شما
+
 console.log(
   `AXIOS_INSTANCE: Initializing with API URL: ${process.env.NEXT_PUBLIC_API_BASE_URL}`
 );
 
 const apiClient = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
+  // این گزینه معادل credentials: 'include' است و برای همه درخواست‌ها کوکی‌ها را ارسال می‌کند
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
@@ -21,6 +22,21 @@ export const setGetAccessToken = (fn) => {
   getAccessToken = fn;
 };
 
+// یک فلگ برای جلوگیری از تلاش‌های مکرر برای رفرش توکن
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
 // --- رهگیر درخواست (Request Interceptor) ---
 apiClient.interceptors.request.use(
   (config) => {
@@ -28,64 +44,55 @@ apiClient.interceptors.request.use(
     if (token) {
       config.headers["Authorization"] = `Bearer ${token}`;
     }
-    // لاگ کردن هر درخواست قبل از ارسال به سرور
-    console.log(`AXIOS_REQUEST: Sending request to: ${config.url}`, {
-      headers: config.headers,
-      method: config.method,
-      data: config.data,
-    });
-    // --- لاگ شرطی و دقیق فقط برای درخواست /me ---
-    if (config.url.endsWith("/me")) {
-      console.log("--- DEBUG LOG FOR /me REQUEST ---");
-      console.log("URL:", config.url);
-      console.log("HEADERS:", config.headers);
-      console.log("SPECIFIC AUTH HEADER:", config.headers["Authorization"]);
-      console.log("--- END DEBUG LOG ---");
-    }
     return config;
   },
-  (error) => {
-    console.error("AXIOS_REQUEST_ERROR: Error before sending request:", error);
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 // --- رهگیر پاسخ (Response Interceptor) ---
 apiClient.interceptors.response.use(
-  (response) => {
-    // در صورت موفقیت‌آمیز بودن، فقط پاسخ را برمی‌گردانیم
-    return response;
-  },
+  (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    // لاگ کردن هر خطایی که از سمت API دریافت می‌شود
-    console.error(
-      `AXIOS_RESPONSE_ERROR: Received error for request to ${originalRequest.url}`,
-      {
-        status: error.response?.status,
-        data: error.response?.data,
-      }
-    );
 
-    if (error.response.status === 401 && !originalRequest._retry) {
+    // اگر خطا 401 بود و مربوط به رفرش توکن نبود و قبلا تلاش نشده بود
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        // اگر در حال رفرش هستیم، درخواست فعلی را در صف قرار می‌دهیم
+        return new Promise(function (resolve, reject) {
+          failedQueue.push({ resolve, reject });
+        }).then((token) => {
+          originalRequest.headers["Authorization"] = "Bearer " + token;
+          return apiClient(originalRequest);
+        });
+      }
+
       originalRequest._retry = true;
-      console.warn(
-        "AXIOS_401: Access Token might be expired. Attempting to refresh..."
-      );
+      isRefreshing = true;
 
       try {
+        console.log(
+          "AXIOS_401: Access Token expired. Attempting to refresh..."
+        );
         const csrfToken = getCookie("ADMIN_CSRF");
-        console.log("AXIOS_REFRESH: Sending token refresh request...");
+
+        if (!csrfToken) {
+          console.error("Refresh failed: ADMIN_CSRF cookie not found.");
+          window.dispatchEvent(new CustomEvent("logout"));
+          return Promise.reject(error);
+        }
 
         const { data } = await apiClient.post(
           "/api/admin/refresh",
           {},
-          { headers: { "X-ADMIN-CSRF": csrfToken } }
+          {
+            headers: { "X-ADMIN-CSRF": csrfToken },
+          }
         );
 
         console.log("AXIOS_REFRESH_SUCCESS: Token refreshed successfully.");
 
-        // ارسال رویداد برای آپدیت توکن در کانتکست
+        // رویداد برای آپدیت توکن در کانتکست
         const event = new CustomEvent("tokenRefreshed", { detail: data });
         window.dispatchEvent(event);
 
@@ -97,23 +104,15 @@ apiClient.interceptors.response.use(
           "Authorization"
         ] = `Bearer ${data.access_token}`;
 
-        console.log(
-          "AXIOS_RETRY: Retrying the original request to:",
-          originalRequest.url
-        );
+        processQueue(null, data.access_token);
         return apiClient(originalRequest);
       } catch (refreshError) {
-        console.error("AXIOS_REFRESH_FAILED: Token refresh failed.", {
-          status: refreshError.response?.status,
-          data: refreshError.response?.data,
-        });
-
-        // ارسال رویداد برای خروج کامل کاربر
-        console.warn(
-          "AXIOS_LOGOUT_EVENT: Dispatching logout event due to refresh failure."
-        );
-        window.dispatchEvent(new CustomEvent("logout"));
+        console.error("AXIOS_REFRESH_FAILED:", refreshError);
+        processQueue(refreshError, null);
+        window.dispatchEvent(new CustomEvent("logout")); // اگر رفرش هم شکست خورد، خروج
         return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
       }
     }
 
