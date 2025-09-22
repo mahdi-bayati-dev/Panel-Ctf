@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
+import toast from "react-hot-toast";
 import TikIcon from "@/components/icons/tik";
 import BackIcon from "@/components/icons/back";
 import RulesIcon from "@/components/icons/rulesIcon";
