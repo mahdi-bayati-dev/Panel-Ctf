@@ -41,9 +41,7 @@ function Rules() {
   }, [fetchRuleContent]);
 
   // === تابع هوشمند ذخیره (ایجاد یا ویرایش) ===
-  // ✨✨✨ تغییر اصلی اینجاست ✨✨✨
   const handleSave = async () => {
-    // ولیدیشن ساده
     if (!title.trim() || !content.trim()) {
       toast.error("لطفاً عنوان و محتوای قانون را وارد کنید.");
       return;
@@ -52,34 +50,34 @@ function Rules() {
     setIsSubmitting(true);
     try {
       if (ruleId) {
-        // حالت ویرایش مثل قبل باقی می‌ماند
-        await updateRule(ruleId, { title, content });
-        // بعد از ویرایش، داده‌ها را بازخوانی می‌کنیم تا از صحت آن مطمئن شویم
-        await fetchRuleContent();
+        // --- شروع تغییرات در حالت ویرایش ---
+
+        // ۱. قانون را آپدیت می‌کنیم و منتظر پاسخ سرور (آبجکت آپدیت‌شده) می‌مانیم.
+        const updatedRule = await updateRule(ruleId, { title, content });
+
+        // ۲. state را با اطلاعات جدید و آپدیت‌شده از سرور، به‌روز می‌کنیم.
+        // این کار به جای فراخوانی مجدد fetchRuleContent انجام می‌شود.
+        if (updatedRule && updatedRule.id) {
+          setTitle(updatedRule.title);
+          setContent(updatedRule.content);
+        }
         toast.success("قوانین با موفقیت به‌روزرسانی شد!");
+
+        // --- پایان تغییرات ---
       } else {
-        // --- شروع تغییرات در حالت ایجاد ---
-
-        // ۱. قانون جدید را ایجاد می‌کنیم و منتظر می‌مانیم تا سرور
-        // آبجکت قانون ساخته شده (با title, content, id) را برگرداند.
+        // حالت ایجاد که قبلا درست کردیم و عالی کار می‌کنه
         const newRule = await createRule({ title, content });
-
-        // ۲. حالا به جای فراخوانی دوباره‌ی getRules، مستقیماً از آبجکت newRule
-        // برای آپدیت کردن state استفاده می‌کنیم.
         if (newRule && newRule.id) {
           setTitle(newRule.title);
           setContent(newRule.content);
           setRuleId(newRule.id);
-        } else {
-          // اگر به هر دلیلی سرور آبجکت را برنگرداند، از روش قبلی استفاده می‌کنیم
-          // تا برنامه دچار خطا نشود.
-          await fetchRuleContent();
         }
-        // --- پایان تغییرات ---
       }
     } catch (error) {
       console.error("خطا در عملیات ذخیره‌سازی:", error);
-      toast.error("عملیات ذخیره‌سازی ناموفق بود.");
+      // از سمت سرویس یک toast خطا نمایش داده می‌شود، اینجا نیازی به تکرار نیست.
+      // فقط در صورتی که بخواهیم پیام عمومی‌تری بدهیم:
+      // toast.error("عملیات ذخیره‌سازی ناموفق بود.");
     } finally {
       setIsSubmitting(false);
     }
