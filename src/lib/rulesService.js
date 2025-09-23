@@ -7,8 +7,7 @@ import toast from "react-hot-toast";
  */
 export const getRules = async () => {
   try {
-    // ✨ تغییر: آدرس به /api/contents تغییر کرد (مطابق با آپدیت بک‌اند)
-    const response = await apiClient.get("/api/contents");
+    const response = await apiClient.get("/api/admin/contents");
     console.log(response);
     console.log(response.data);
     return response.data;
@@ -25,8 +24,7 @@ export const getRules = async () => {
  */
 export const createRule = async (ruleData) => {
   try {
-    // ✨ تغییر: پیشوند /admin حذف شد
-    const response = await apiClient.post("/api/content", ruleData);
+    const response = await apiClient.post("/api/admin/content", ruleData);
     console.log(response);
     console.log(response.data);
 
@@ -46,12 +44,9 @@ export const createRule = async (ruleData) => {
  */
 export const updateRule = async (id, ruleData) => {
   try {
-    // ✨ تغییر: پیشوند /admin حذف شد
-    const response = await apiClient.put(`/api/content/${id}`, ruleData);
+    const response = await apiClient.put(`/api/admin/content/${id}`, ruleData);
     console.log(response);
     console.log(response.data);
-
-    // نکته: این toast در کامپوننت هم وجود دارد، شاید بهتر باشد یکی از آن‌ها را نگه داری
     toast.success("قوانین با موفقیت به‌روزرسانی شد!");
     return response.data;
   } catch (error) {
