@@ -61,7 +61,7 @@ function Rules() {
           setTitle(updatedRule.title);
           setContent(updatedRule.content);
         }
-        toast.success("قوانین با موفقیت به‌روزرسانی شد!");
+        // toast.success("قوانین با موفقیت به‌روزرسانی شد!");
 
         // --- پایان تغییرات ---
       } else {
