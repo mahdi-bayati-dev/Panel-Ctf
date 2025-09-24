@@ -22,25 +22,41 @@ const UserSkeleton = () => (
 
 // *** اصلاح تابع fetch ***
 // حالا pageParam شماره صفحه است (مثلاً 1, 2, 3)
+// ... داخل TopPerformers.js
+
+// تابع fetch را به این شکل اصلاح می‌کنیم
 const fetchUsersTopPerformers = async ({ pageParam = 1, queryKey }) => {
   const [_, searchTerm] = queryKey;
-  const PER_PAGE = 15; // تعداد آیتم‌ها را به عنوان یک متغیر تعریف می‌کنیم
+  const PER_PAGE = 15;
   const params = new URLSearchParams({
     per_page: String(PER_PAGE),
-    page: String(pageParam), // ارسال شماره صفحه به API
+    page: String(pageParam),
   });
 
   if (searchTerm) {
     params.append("q", searchTerm);
   }
-  const { data } = await apiClient.get(
-    `api/admin/check_test_leader?${params.toString()}`
-  );
-  console.log(data);
-  
 
-  // API شما مستقیماً آرایه را برمی‌گرداند
-  return data;
+  try {
+    const { data } = await apiClient.get(
+      `api/admin/check_test_leader?${params.toString()}`
+    );
+    console.log(data);
+    
+
+    // *** راه‌حل کلیدی: همیشه یک آرایه برگردان ***
+    // چک می‌کنیم که آیا پاسخ API یک آرایه است یا نه.
+    if (Array.isArray(data)) {
+      return data; // اگر آرایه بود، همان را برمی‌گردانیم
+    }
+    // در غیر این صورت (اگر null, object یا چیز دیگری بود)، یک آرایه خالی برمی‌گردانیم
+    return [];
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    // در صورت بروز خطا در شبکه، یک آرایه خالی برمی‌گردانیم تا UI کرش نکند
+    // react-query خودش خطا را مدیریت می‌کند، اما این کار برای اطمینان بیشتر است
+    return [];
+  }
 };
 
 function TopPerformers() {
