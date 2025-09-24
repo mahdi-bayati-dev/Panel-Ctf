@@ -21,9 +21,8 @@ const UserSkeleton = () => (
   </div>
 );
 
-// تابع دریافت همه کاربران (دیگر pageParam ندارد)
+// تابع دریافت همه کاربران (نسخه نهایی و تمیز)
 const fetchAllUsers = async ({ queryKey }) => {
-  // queryKey همچنان برای دریافت مقدار جستجو استفاده می‌شود
   const [_, searchTerm] = queryKey;
   const params = new URLSearchParams();
 
@@ -31,24 +30,22 @@ const fetchAllUsers = async ({ queryKey }) => {
     params.append("q", searchTerm);
   }
 
-  // پارامترهای page و per_page حذف شده‌اند
   const endpoint = `api/admin/check_test_leader?${params.toString()}`;
-  console.log(`Fetching all users. Endpoint: ${endpoint}`);
+  console.log(endpoint);
+  
 
   try {
     const { data } = await apiClient.get(endpoint);
     console.log(data);
     
-
     // اطمینان از اینکه پاسخ همیشه یک آرایه است
     if (Array.isArray(data)) {
       return data;
     }
-    console.warn("Received data is NOT an array. Returning empty array.", data);
-    return [];
+    return []; // اگر به هر دلیلی پاسخ آرایه نبود
   } catch (error) {
     console.error("Error fetching users:", error.response || error.message);
-    throw error; // در useQuery بهتر است خطا را throw کنیم تا isError به درستی کار کند
+    throw error; // خطا را به react-query می‌دهیم تا مدیریت کند
   }
 };
 
@@ -57,16 +54,15 @@ function TopPerformers() {
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearchTerm = useDebounce(searchTerm, 400);
 
-  // جایگزینی useInfiniteQuery با useQuery
   const {
-    data: users, // نام data را به users تغییر می‌دهیم تا خواناتر باشد
+    data: users,
     error,
-    isPending, // در نسخه جدید react-query، به جای status از isPending استفاده می‌شود
+    isPending,
     isError,
   } = useQuery({
     queryKey: ["users", debouncedSearchTerm],
     queryFn: fetchAllUsers,
-    enabled: !!accessToken, // این گزینه همچنان کاربردی و مهم است
+    enabled: !!accessToken,
   });
 
   return (
@@ -94,16 +90,16 @@ function TopPerformers() {
             </div>
           </div>
 
-          {/* لیست کاربران */}
-          {/* <div className="flax flex-col">
-            {isPending ? ( // استفاده از isPending برای حالت لودینگ
+          {/* ===== این بخش از کامنت خارج شد ===== */}
+          <div className="flax flex-col">
+            {isPending ? (
               Array.from({ length: 5 }).map((_, i) => <UserSkeleton key={i} />)
-            ) : isError ? ( // استفاده از isError برای حالت خطا
+            ) : isError ? (
               <div className="text-red-500">
                 خطا در دریافت اطلاعات: {error.message}
               </div>
             ) : (
-              
+              // حالا مستقیماً روی آرایه users حلقه می‌زنیم
               users.map((user) => (
                 <Link
                   key={user.id}
@@ -128,13 +124,14 @@ function TopPerformers() {
                 </Link>
               ))
             )}
-
+            
+            {/* نمایش پیام در صورتی که هیچ کاربری یافت نشود */}
             {users && users.length === 0 && !isPending && (
-              <div className="text-center text-gray-400 mt-8">
-                هیچ کاربری یافت نشد.
-              </div>
+                <div className="text-center text-gray-400 mt-8">
+                    هیچ کاربری یافت نشد.
+                </div>
             )}
-          </div> */}
+          </div>
         </div>
       </div>
     </div>
