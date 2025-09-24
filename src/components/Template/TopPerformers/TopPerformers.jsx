@@ -31,7 +31,7 @@ const fetchAllUsers = async ({ queryKey }) => {
   try {
     const { data } = await apiClient.get(endpoint);
     console.log(data);
-    
+
     return Array.isArray(data) ? data : [];
   } catch (error) {
     console.error("Error fetching users:", error.response || error.message);
@@ -61,7 +61,10 @@ function TopPerformers() {
         <div className="flex flex-col gap-6 rounded-2xl bg-dark md:p-6 text-white transition">
           {/* فیلد جست‌وجو */}
           <div className="border-b border-colorThemeLite-green pb-4">
-            <label htmlFor="search" className="mb-2 text-colorThemeLite-accent font-semibold flex items-center gap-2">
+            <label
+              htmlFor="search"
+              className="mb-2 text-colorThemeLite-accent font-semibold flex items-center gap-2"
+            >
               <SearchIcon_2 />
               <span>جست‌وجو</span>
             </label>
@@ -78,17 +81,20 @@ function TopPerformers() {
           </div>
 
           {/* لیست کاربران */}
-          {/* <div className="flax flex-col">
+          <div className="flax flex-col">
             {isPending ? (
               Array.from({ length: 5 }).map((_, i) => <UserSkeleton key={i} />)
             ) : isError ? (
               <div className="text-red-500">
-                خطا در دریافت اطلاعات: {error.message}
+                خطا در دریافت اطلاعات: {error?.message || "خطای ناشناخته"}
               </div>
-            ) : (
-
-              users?.map((user) => (
-                <Link key={user.id} href={`/user/${user.id}`} className="w-full">
+            ) : Array.isArray(users) && users.length > 0 ? (
+              users.map((user) => (
+                <Link
+                  key={user.id}
+                  href={`/user/${user.id}`}
+                  className="w-full"
+                >
                   <div className="border border-colorThemeLite-green rounded-2xl p-4 flex gap-4 my-2 items-center hover:scale-[102%] hover:bg-colorThemeLite-green/20 transition-transform cursor-pointer">
                     <img
                       src={user.picture_url || "/img/p-user/person.png"}
@@ -96,21 +102,22 @@ function TopPerformers() {
                       className="w-16 h-16 rounded-2xl object-cover border border-colorThemeLite-green/60"
                     />
                     <div className="flex justify-between items-center flex-1 text-left">
-                      <span className="font-bold text-lg">{user.display_name}</span>
-                      <span className="text-sm text-colorThemeLite-accent">ID: {user.id}</span>
+                      <span className="font-bold text-lg">
+                        {user.display_name}
+                      </span>
+                      <span className="text-sm text-colorThemeLite-accent">
+                        ID: {user.id}
+                      </span>
                     </div>
                   </div>
                 </Link>
               ))
+            ) : (
+              <div className="text-center text-gray-400 mt-8">
+                هیچ کاربری یافت نشد.
+              </div>
             )}
-            
-          
-            {users && users.length === 0 && !isPending && (
-                <div className="text-center text-gray-400 mt-8">
-                    هیچ کاربری یافت نشد.
-                </div>
-            )}
-          </div> */}
+          </div>
         </div>
       </div>
     </div>
