@@ -106,7 +106,7 @@ function TopPerformers() {
                         {user.display_name}
                       </span>
                       <span className="text-sm text-colorThemeLite-accent">
-                        ID: {user.id}
+                        امتیاز: {user.total_points}
                       </span>
                     </div>
                   </div>
