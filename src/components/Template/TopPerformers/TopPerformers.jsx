@@ -1,7 +1,8 @@
 "use client";
 import React, { useState } from "react";
 import Link from "next/link";
-import { useInfiniteQuery } from "@tanstack/react-query";
+// useQuery را به جای useInfiniteQuery وارد می‌کنیم
+import { useQuery } from "@tanstack/react-query";
 import apiClient from "@/lib/axios";
 import useDebounce from "@/hooks/CustomDebounceHook";
 import useAuth from "@/hooks/useAuth";
@@ -20,43 +21,32 @@ const UserSkeleton = () => (
   </div>
 );
 
-// تابع نهایی و صحیح برای دریافت اطلاعات کاربران
-const fetchUsersTopPerformers = async ({ pageParam = 1, queryKey }) => {
+// تابع دریافت همه کاربران (دیگر pageParam ندارد)
+const fetchAllUsers = async ({ queryKey }) => {
+  // queryKey همچنان برای دریافت مقدار جستجو استفاده می‌شود
   const [_, searchTerm] = queryKey;
-  const PER_PAGE = 15;
-  const params = new URLSearchParams({
-    page: String(pageParam),
-    per_page: String(PER_PAGE),
-  });
+  const params = new URLSearchParams();
 
   if (searchTerm) {
     params.append("q", searchTerm);
   }
 
-  // اضافه کردن لاگ برای دیباگ در Vercel
-  console.log(`Fetching page: ${pageParam}, search: "${searchTerm}"`);
+  // پارامترهای page و per_page حذف شده‌اند
+  const endpoint = `api/admin/check_test_leader?${params.toString()}`;
+  console.log(`Fetching all users. Endpoint: ${endpoint}`);
 
   try {
-    const { data } = await apiClient.get(
-      `api/admin/check_test_leader?${params.toString()}`
-    );
+    const { data } = await apiClient.get(endpoint);
 
-    // لاگ کردن داده دریافتی در Vercel
-    console.log("Data received on Vercel:", data);
-
+    // اطمینان از اینکه پاسخ همیشه یک آرایه است
     if (Array.isArray(data)) {
       return data;
     }
-    // اگر داده دریافتی آرایه نبود، لاگ می‌کنیم تا در Vercel ببینیم
     console.warn("Received data is NOT an array. Returning empty array.", data);
     return [];
   } catch (error) {
-    // لاگ کردن خطا در Vercel
-    console.error(
-      "Error fetching users on Vercel:",
-      error.response || error.message
-    );
-    return [];
+    console.error("Error fetching users:", error.response || error.message);
+    throw error; // در useQuery بهتر است خطا را throw کنیم تا isError به درستی کار کند
   }
 };
 
@@ -65,29 +55,16 @@ function TopPerformers() {
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearchTerm = useDebounce(searchTerm, 400);
 
+  // جایگزینی useInfiniteQuery با useQuery
   const {
-    data,
+    data: users, // نام data را به users تغییر می‌دهیم تا خواناتر باشد
     error,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    status,
-  } = useInfiniteQuery({
+    isPending, // در نسخه جدید react-query، به جای status از isPending استفاده می‌شود
+    isError,
+  } = useQuery({
     queryKey: ["users", debouncedSearchTerm],
-    queryFn: fetchUsersTopPerformers,
-
-    // منطق صفحه‌بندی بر اساس شماره صفحه صحیح است و باقی می‌ماند
-    getNextPageParam: (lastPage, allPages) => {
-      const PER_PAGE = 15;
-      // اگر صفحه آخر آیتمی نداشت یا تعدادش کمتر از حد انتظار بود، یعنی صفحه بعدی وجود ندارد
-      if (!lastPage || lastPage.length < PER_PAGE) {
-        return undefined;
-      }
-      // شماره صفحه بعدی = تعداد کل صفحات دریافت شده + 1
-      return allPages.length + 1;
-    },
-    initialPageParam: 1, // شروع از صفحه 1
-    enabled: !!accessToken, // کوئری تنها در صورت وجود توکن فعال می‌شود
+    queryFn: fetchAllUsers,
+    enabled: !!accessToken, // این گزینه همچنان کاربردی و مهم است
   });
 
   return (
@@ -117,59 +94,45 @@ function TopPerformers() {
 
           {/* لیست کاربران */}
           <div className="flax flex-col">
-            {status === "pending" ? (
+            {isPending ? ( // استفاده از isPending برای حالت لودینگ
               Array.from({ length: 5 }).map((_, i) => <UserSkeleton key={i} />)
-            ) : status === "error" ? (
+            ) : isError ? ( // استفاده از isError برای حالت خطا
               <div className="text-red-500">
                 خطا در دریافت اطلاعات: {error.message}
               </div>
             ) : (
-              <>
-                {data.pages.map((page, i) => (
-                  <React.Fragment key={`page-${i}`}>
-                    {/* حالا این کد به درستی کار می‌کند چون fetchUsersTopPerformers همیشه یک آرایه برمی‌گرداند */}
-                    {page.map((user) => (
-                      <Link
-                        key={user.id}
-                        href={`/user/${user.id}`}
-                        className="w-full"
-                      >
-                        <div className="border border-colorThemeLite-green rounded-2xl p-4 flex gap-4 my-2 items-center hover:scale-[102%] hover:bg-colorThemeLite-green/20 transition-transform cursor-pointer">
-                          <img
-                            src={user.picture_url || "/img/p-user/person.png"}
-                            alt={user.display_name || "User Avatar"}
-                            className="w-16 h-16 rounded-2xl object-cover border border-colorThemeLite-green/60"
-                          />
-                          <div className="flex justify-between items-center flex-1 text-left">
-                            <span className="font-bold text-lg">
-                              {user.display_name}
-                            </span>
-                            <span className="text-sm text-colorThemeLite-accent">
-                              ID: {user.id}
-                            </span>
-                          </div>
-                        </div>
-                      </Link>
-                    ))}
-                  </React.Fragment>
-                ))}
-              </>
+              // حالا مستقیماً روی آرایه users حلقه می‌زنیم
+              users.map((user) => (
+                <Link
+                  key={user.id}
+                  href={`/user/${user.id}`}
+                  className="w-full"
+                >
+                  <div className="border border-colorThemeLite-green rounded-2xl p-4 flex gap-4 my-2 items-center hover:scale-[102%] hover:bg-colorThemeLite-green/20 transition-transform cursor-pointer">
+                    <img
+                      src={user.picture_url || "/img/p-user/person.png"}
+                      alt={user.display_name || "User Avatar"}
+                      className="w-16 h-16 rounded-2xl object-cover border border-colorThemeLite-green/60"
+                    />
+                    <div className="flex justify-between items-center flex-1 text-left">
+                      <span className="font-bold text-lg">
+                        {user.display_name}
+                      </span>
+                      <span className="text-sm text-colorThemeLite-accent">
+                        ID: {user.id}
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              ))
             )}
 
-            {/* دکمه "بارگذاری بیشتر" */}
-            <div className="mt-6">
-              <button
-                onClick={() => fetchNextPage()}
-                disabled={!hasNextPage || isFetchingNextPage}
-                className="bg-colorThemeLite-green text-dark px-6 py-2 rounded-xl font-bold hover:bg-green-400 transition disabled:bg-gray-500 disabled:cursor-not-allowed"
-              >
-                {isFetchingNextPage
-                  ? "در حال بارگذاری..."
-                  : hasNextPage
-                  ? "بارگذاری بیشتر"
-                  : "پایان لیست کاربران"}
-              </button>
-            </div>
+            {/* نمایش پیام در صورتی که هیچ کاربری یافت نشود */}
+            {users && users.length === 0 && !isPending && (
+              <div className="text-center text-gray-400 mt-8">
+                هیچ کاربری یافت نشد.
+              </div>
+            )}
           </div>
         </div>
       </div>
