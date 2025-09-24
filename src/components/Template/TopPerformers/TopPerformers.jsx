@@ -25,6 +25,8 @@ const UserSkeleton = () => (
 // ... داخل TopPerformers.js
 
 // تابع fetch را به این شکل اصلاح می‌کنیم
+// این کد را جایگزین تابع fetch قبلی کن
+
 const fetchUsersTopPerformers = async ({ pageParam = 1, queryKey }) => {
   const [_, searchTerm] = queryKey;
   const PER_PAGE = 15;
@@ -41,20 +43,31 @@ const fetchUsersTopPerformers = async ({ pageParam = 1, queryKey }) => {
     const { data } = await apiClient.get(
       `api/admin/check_test_leader?${params.toString()}`
     );
-    console.log(data);
-    
 
-    // *** راه‌حل کلیدی: همیشه یک آرایه برگردان ***
-    // چک می‌کنیم که آیا پاسخ API یک آرایه است یا نه.
+    // این لاگ حیاتی است. خروجی آن را برای من بفرست.
+    console.log("پاسخ کامل از API:", data);
+
+    // --- کد هوشمند جدید برای پیدا کردن آرایه ---
+
+    // 1. اول چک می‌کنیم آیا خودِ data یک آرایه است
     if (Array.isArray(data)) {
-      return data; // اگر آرایه بود، همان را برمی‌گردانیم
+      return data;
     }
-    // در غیر این صورت (اگر null, object یا چیز دیگری بود)، یک آرایه خالی برمی‌گردانیم
+
+    // 2. اگر نبود، چک می‌کنیم آیا آبجکتی است که آرایه را داخل خودش دارد
+    if (data && typeof data === "object") {
+      // دنبال کلیدهای رایج می‌گردیم: data, users, items, results
+      const potentialArray =
+        data.data || data.users || data.items || data.results;
+      if (Array.isArray(potentialArray)) {
+        return potentialArray;
+      }
+    }
+
+    // 3. اگر در هیچ حالتی آرایه‌ای پیدا نشد، برای جلوگیری از کرش، آرایه خالی برمی‌گردانیم
     return [];
   } catch (error) {
     console.error("Error fetching users:", error);
-    // در صورت بروز خطا در شبکه، یک آرایه خالی برمی‌گردانیم تا UI کرش نکند
-    // react-query خودش خطا را مدیریت می‌کند، اما این کار برای اطمینان بیشتر است
     return [];
   }
 };
