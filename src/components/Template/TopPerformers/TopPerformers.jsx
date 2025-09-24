@@ -115,7 +115,7 @@ function TopPerformers() {
           </div>
 
           {/* لیست کاربران */}
-          <div className="flax flex-col">
+          {/* <div className="flax flex-col">
             {status === "pending" ? (
               Array.from({ length: 5 }).map((_, i) => <UserSkeleton key={i} />)
             ) : status === "error" ? (
@@ -126,8 +126,7 @@ function TopPerformers() {
               <>
                 {data.pages.map((page, i) => (
                   <React.Fragment key={`page-${i}`}>
-                    {/* *** اصلاح نهایی رندر *** حالا مستقیم روی page که آرایه کاربران است map می‌زنیم
-                     */}
+                     
                     {page.map((user) => (
                       <Link
                         key={user.id}
@@ -156,7 +155,7 @@ function TopPerformers() {
               </>
             )}
 
-            {/* دکمه "بارگذاری بیشتر" */}
+            
             <div className="mt-6">
               <button
                 onClick={() => fetchNextPage()}
@@ -170,7 +169,7 @@ function TopPerformers() {
                   : "پایان لیست کاربران"}
               </button>
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>
