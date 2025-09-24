@@ -30,6 +30,8 @@ const fetchAllUsers = async ({ queryKey }) => {
   const endpoint = `api/admin/check_test_leader?${params.toString()}`;
   try {
     const { data } = await apiClient.get(endpoint);
+    console.log(data);
+    
     return Array.isArray(data) ? data : [];
   } catch (error) {
     console.error("Error fetching users:", error.response || error.message);
@@ -76,7 +78,7 @@ function TopPerformers() {
           </div>
 
           {/* لیست کاربران */}
-          <div className="flax flex-col">
+          {/* <div className="flax flex-col">
             {isPending ? (
               Array.from({ length: 5 }).map((_, i) => <UserSkeleton key={i} />)
             ) : isError ? (
@@ -84,8 +86,7 @@ function TopPerformers() {
                 خطا در دریافت اطلاعات: {error.message}
               </div>
             ) : (
-              // ===== راه حل نهایی اینجاست =====
-              // از Optional Chaining (?.) استفاده می‌کنیم تا از کرش جلوگیری کنیم
+
               users?.map((user) => (
                 <Link key={user.id} href={`/user/${user.id}`} className="w-full">
                   <div className="border border-colorThemeLite-green rounded-2xl p-4 flex gap-4 my-2 items-center hover:scale-[102%] hover:bg-colorThemeLite-green/20 transition-transform cursor-pointer">
@@ -103,13 +104,13 @@ function TopPerformers() {
               ))
             )}
             
-            {/* پیام برای زمانی که لیست خالی است */}
+          
             {users && users.length === 0 && !isPending && (
                 <div className="text-center text-gray-400 mt-8">
                     هیچ کاربری یافت نشد.
                 </div>
             )}
-          </div>
+          </div> */}
         </div>
       </div>
     </div>
