@@ -9,7 +9,7 @@ import useAuth from "@/hooks/useAuth";
 // آیکون‌ها
 import SearchIcon_2 from "@/components/icons/searchIcon-2";
 
-// کامپوننت اسکلت
+// کامپوننت برای نمایش اسکلت لودینگ
 const UserSkeleton = () => (
   <div className="border border-colorThemeLite-green/30 rounded-2xl p-4 flex gap-4 my-2 items-center animate-pulse">
     <div className="w-16 h-16 rounded-2xl bg-gray-700"></div>
@@ -20,39 +20,34 @@ const UserSkeleton = () => (
   </div>
 );
 
-// *** اصلاح تابع fetch ***
-// حالا pageParam شماره صفحه است (مثلاً 1, 2, 3)
-// ... داخل TopPerformers.js
-
-// تابع fetch را به این شکل اصلاح می‌کنیم
-// این کد را جایگزین تابع fetch قبلی کن
-
+// تابع نهایی و صحیح برای دریافت اطلاعات کاربران
 const fetchUsersTopPerformers = async ({ pageParam = 1, queryKey }) => {
   const [_, searchTerm] = queryKey;
+  const PER_PAGE = 15; // تعداد آیتم در هر صفحه
   const params = new URLSearchParams({
     page: String(pageParam),
-    per_page: '15'
+    per_page: String(PER_PAGE),
   });
+
   if (searchTerm) {
     params.append("q", searchTerm);
   }
 
   try {
-    // ما می‌خواهیم کل آبجکت پاسخ axios را ببینیم، نه فقط .data آن را
-    const response = await apiClient.get(`api/admin/check_test_leader?${params.toString()}`);
-    
-    // ---!!! این مهم‌ترین خطوط کد در کل این دیباگ است !!!---
-    console.log("--- START API RESPONSE ---");
-    console.log("این کل آبجکت پاسخی است که از سرور دریافت شده:");
-    console.log(response);
-    console.log("--- END API RESPONSE ---");
-    
-    // فعلا برای اینکه برنامه به هیچ وجه کرش نکند، یک آرایه خالی برمی‌گردانیم
-    return []; 
+    // با استفاده از destructuring، مستقیماً به پراپرتی data از پاسخ axios دسترسی پیدا می‌کنیم
+    const { data } = await apiClient.get(
+      `api/admin/check_test_leader?${params.toString()}`
+    );
 
+    // یک بررسی نهایی برای اطمینان از اینکه پاسخ همیشه یک آرایه است
+    // این کار جلوی کرش در حالت‌هایی که API نتیجه‌ای ندارد را می‌گیرد
+    if (Array.isArray(data)) {
+      return data;
+    }
+    return []; // اگر پاسخ آرایه نبود، یک آرایه خالی برمی‌گردانیم
   } catch (error) {
-    console.error("API call failed!", error);
-    // در صورت خطا هم آرایه خالی برمی‌گردانیم
+    console.error("خطا در دریافت اطلاعات کاربران:", error);
+    // در صورت بروز هرگونه خطا در شبکه، یک آرایه خالی برمی‌گردانیم تا برنامه کرش نکند
     return [];
   }
 };
@@ -73,20 +68,18 @@ function TopPerformers() {
     queryKey: ["users", debouncedSearchTerm],
     queryFn: fetchUsersTopPerformers,
 
-    // *** اصلاح منطق دریافت صفحه بعدی ***
-    // اگر تعداد آیتم‌های صفحه آخر برابر با PER_PAGE بود، یعنی صفحه بعدی وجود دارد
+    // منطق صفحه‌بندی بر اساس شماره صفحه صحیح است و باقی می‌ماند
     getNextPageParam: (lastPage, allPages) => {
       const PER_PAGE = 15;
-      // اگر صفحه آخر خالی بود یا تعداد آیتم‌هایش کمتر از حد انتظار بود، یعنی صفحه بعدی وجود ندارد
+      // اگر صفحه آخر آیتمی نداشت یا تعدادش کمتر از حد انتظار بود، یعنی صفحه بعدی وجود ندارد
       if (!lastPage || lastPage.length < PER_PAGE) {
         return undefined;
       }
-      // شماره صفحه بعدی برابر است با تعداد کل صفحات دریافت شده + 1
+      // شماره صفحه بعدی = تعداد کل صفحات دریافت شده + 1
       return allPages.length + 1;
     },
-    // صفحه اول از شماره 1 شروع می‌شود
-    initialPageParam: 1,
-    enabled: !!accessToken,
+    initialPageParam: 1, // شروع از صفحه 1
+    enabled: !!accessToken, // کوئری تنها در صورت وجود توکن فعال می‌شود
   });
 
   return (
@@ -115,7 +108,7 @@ function TopPerformers() {
           </div>
 
           {/* لیست کاربران */}
-          {/* <div className="flax flex-col">
+          <div className="flax flex-col">
             {status === "pending" ? (
               Array.from({ length: 5 }).map((_, i) => <UserSkeleton key={i} />)
             ) : status === "error" ? (
@@ -126,7 +119,7 @@ function TopPerformers() {
               <>
                 {data.pages.map((page, i) => (
                   <React.Fragment key={`page-${i}`}>
-                     
+                    {/* حالا این کد به درستی کار می‌کند چون fetchUsersTopPerformers همیشه یک آرایه برمی‌گرداند */}
                     {page.map((user) => (
                       <Link
                         key={user.id}
@@ -136,12 +129,12 @@ function TopPerformers() {
                         <div className="border border-colorThemeLite-green rounded-2xl p-4 flex gap-4 my-2 items-center hover:scale-[102%] hover:bg-colorThemeLite-green/20 transition-transform cursor-pointer">
                           <img
                             src={user.picture_url || "/img/p-user/person.png"}
-                            alt={user.name}
+                            alt={user.display_name || "User Avatar"}
                             className="w-16 h-16 rounded-2xl object-cover border border-colorThemeLite-green/60"
                           />
                           <div className="flex justify-between items-center flex-1 text-left">
                             <span className="font-bold text-lg">
-                              {user.name || user.display_name}
+                              {user.display_name}
                             </span>
                             <span className="text-sm text-colorThemeLite-accent">
                               ID: {user.id}
@@ -155,7 +148,7 @@ function TopPerformers() {
               </>
             )}
 
-            
+            {/* دکمه "بارگذاری بیشتر" */}
             <div className="mt-6">
               <button
                 onClick={() => fetchNextPage()}
@@ -169,7 +162,7 @@ function TopPerformers() {
                   : "پایان لیست کاربران"}
               </button>
             </div>
-          </div> */}
+          </div>
         </div>
       </div>
     </div>
