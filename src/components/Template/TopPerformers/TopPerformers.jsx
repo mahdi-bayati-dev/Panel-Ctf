@@ -22,7 +22,7 @@ const UserSkeleton = () => (
 );
 
 // تابع برای فراخوانی API و گرفتن لیست کاربران
-// این تابع pageParam را دریافت می‌کند که همان 'cursor' ماست
+// این تابع باید کل آبجکت پاسخ را برگرداند تا به next_cursor دسترسی داشته باشیم
 const fetchUsersTopPerformers = async ({ pageParam = null, queryKey }) => {
   const [_, searchTerm] = queryKey;
   const params = new URLSearchParams({
@@ -34,9 +34,12 @@ const fetchUsersTopPerformers = async ({ pageParam = null, queryKey }) => {
   if (searchTerm) {
     params.append("q", searchTerm);
   }
-  const { data } = await apiClient.get(`api/admin/check_test_leader?${params.toString()}`);
-  console.log(data);
-  
+  // response.data کل آبجکت پاسخ از API است (شامل data و next_cursor)
+  const { data } = await apiClient.get(
+    `api/admin/check_test_leader?${params.toString()}`
+  );
+
+  // ما کل این آبجکت را برمی‌گردانیم
   return data;
 };
 
@@ -47,7 +50,6 @@ function TopPerformers() {
   // از هوک useDebounce استفاده می‌کنیم تا جلوی درخواست‌های مکرر را بگیریم
   const debouncedSearchTerm = useDebounce(searchTerm, 400); // 400 میلی‌ثانیه تأخیر
 
-  // استفاده از useInfiniteQuery برای مدیریت داده‌ها، لودینگ، خطا و صفحه‌بندی
   const {
     data,
     error,
@@ -57,16 +59,11 @@ function TopPerformers() {
     isFetchingNextPage,
     status,
   } = useInfiniteQuery({
-    // queryKey یک آرایه است. وقتی searchTerm تغییر کند، react-query به صورت خودکار داده‌ها را دوباره فراخوانی می‌کند.
     queryKey: ["users", debouncedSearchTerm],
-    // queryFn تابعی است که برای گرفتن داده‌ها استفاده می‌شود.
     queryFn: fetchUsersTopPerformers,
-    // getNextPageParam مشخص می‌کند که پارامتر صفحه بعدی (cursor) چیست.
-    // اگر next_cursor وجود داشت، آن را برای صفحه بعد برمی‌گردانیم، در غیر این صورت undefined برمی‌گردانیم.
+    // getNextPageParam حالا به درستی کار می‌کند چون lastPage یک آبجکت است
     getNextPageParam: (lastPage) => lastPage.next_cursor ?? undefined,
-    // این گزینه برای جلوگیری از فراخوانی اولیه در زمان مانت شدن کامپوننت است
     initialPageParam: null,
-    // فقط در صورتی که توکن وجود داشته باشد، کوئری را فعال می‌کنیم
     enabled: !!accessToken,
   });
 
@@ -109,34 +106,35 @@ function TopPerformers() {
               // نمایش لیست کاربران
               <>
                 {data.pages.map((page, i) => (
-                    console.log(data),
-                    
                   <React.Fragment key={i}>
-                    {page.data.map((user) => (
-                      <Link
-                        key={user.id}
-                        href={`/user/${user.id}`}
-                        className="w-full"
-                      >
-                        <div className="border border-colorThemeLite-green rounded-2xl p-4 flex gap-4 my-2 items-center hover:scale-[102%] hover:bg-colorThemeLite-green/20 transition-transform cursor-pointer">
-                          <img
-                            src={user.picture_url || "/img/p-user/person.png"}
-                            alt={user.name}
-                            className="w-16 h-16 rounded-2xl object-cover border border-colorThemeLite-green/60"
-                          />
-
-                          {/* این div رو flex-1 کن تا عرض پر بشه */}
-                          <div className="flex justify-between items-center flex-1 text-left">
-                            <span className="font-bold text-lg">
-                              {user.name}
-                            </span>
-                            <span className="text-sm text-colorThemeLite-accent">
-                              ID: {user.id}
-                            </span>
+                    {/* *** نکته کلیدی اصلاح شده ***
+                      حالا page یک آبجکت است و ما باید روی آرایه page.data پیمایش کنیم.
+                      این کد شما از اول درست بود، مشکل از داده‌ای بود که به آن می‌رسید.
+                    */}
+                    {page.data &&
+                      page.data.map((user) => (
+                        <Link
+                          key={user.id}
+                          href={`/user/${user.id}`}
+                          className="w-full"
+                        >
+                          <div className="border border-colorThemeLite-green rounded-2xl p-4 flex gap-4 my-2 items-center hover:scale-[102%] hover:bg-colorThemeLite-green/20 transition-transform cursor-pointer">
+                            <img
+                              src={user.picture_url || "/img/p-user/person.png"}
+                              alt={user.name}
+                              className="w-16 h-16 rounded-2xl object-cover border border-colorThemeLite-green/60"
+                            />
+                            <div className="flex justify-between items-center flex-1 text-left">
+                              <span className="font-bold text-lg">
+                                {user.name}
+                              </span>
+                              <span className="text-sm text-colorThemeLite-accent">
+                                ID: {user.id}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      </Link>
-                    ))}
+                        </Link>
+                      ))}
                   </React.Fragment>
                 ))}
               </>
