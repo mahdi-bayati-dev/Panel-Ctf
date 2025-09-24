@@ -9,7 +9,7 @@ import useAuth from "@/hooks/useAuth";
 // آیکون‌ها
 import SearchIcon_2 from "@/components/icons/searchIcon-2";
 
-// کامپوننت برای نمایش اسکلت لودینگ
+// اسکلت لودینگ
 const UserSkeleton = () => (
   <div className="border border-colorThemeLite-green/30 rounded-2xl p-4 flex gap-4 my-2 items-center animate-pulse">
     <div className="w-16 h-16 rounded-2xl bg-gray-700"></div>
@@ -22,19 +22,16 @@ const UserSkeleton = () => (
 
 // تابع دریافت همه کاربران
 const fetchAllUsers = async ({ queryKey }) => {
-  const [_, searchTerm] = queryKey;
+  const [, searchTerm] = queryKey;
   const params = new URLSearchParams();
-  if (searchTerm) {
-    params.append("q", searchTerm);
-  }
+  if (searchTerm) params.append("q", searchTerm);
   const endpoint = `api/admin/check_test_leader?${params.toString()}`;
   try {
     const { data } = await apiClient.get(endpoint);
-    console.log(data);
-
+    console.log("fetchAllUsers -> data:", data);
     return Array.isArray(data) ? data : [];
   } catch (error) {
-    console.error("Error fetching users:", error.response || error.message);
+    console.error("Error fetching users:", error?.response || error?.message || error);
     throw error;
   }
 };
@@ -45,15 +42,21 @@ function TopPerformers() {
   const debouncedSearchTerm = useDebounce(searchTerm, 400);
 
   const {
-    data: users,
+    data: users = [],      // <--- مقدار پیش‌فرض خالی تا هیچ‌وقت undefined نباشد
     error,
-    isPending,
+    isLoading,
+    isFetching,
     isError,
   } = useQuery({
-    queryKey: ["users", debouncedSearchTerm],
+    queryKey: ["users", debouncedSearchTerm ?? ""], // <--- همیشه یک مقدار پایدار بفرست
     queryFn: fetchAllUsers,
     enabled: !!accessToken,
+    keepPreviousData: true,  // <--- از پاک شدن موقت داده جلوگیری می‌کند
+    staleTime: 1000 * 60,    // اختیاری: 1 دقیقه به عنوان staleTime
   });
+
+  // برای دیباگ (اختیاری) می‌تونی لاگ کنی:
+  console.log("render users:", users, { isLoading, isFetching, isError });
 
   return (
     <div className="min-h-screen flex flex-col items-center text-center mt-2 ">
@@ -82,17 +85,18 @@ function TopPerformers() {
 
           {/* لیست کاربران */}
           <div className="flax flex-col">
-            {isPending ? (
+            { (isLoading || isFetching) ? (
               Array.from({ length: 5 }).map((_, i) => <UserSkeleton key={i} />)
             ) : isError ? (
               <div className="text-red-500">
                 خطا در دریافت اطلاعات: {error?.message || "خطای ناشناخته"}
               </div>
-            ) : Array.isArray(users) && users.length > 0 ? (
+            ) : users.length > 0 ? (
               users.map((user) => (
                 <Link
-                  key={user.id}
+                  key={user.id ?? Math.random()}
                   href={`/user/${user.id}`}
+                  prefetch={false} // اختیاری: غیرفعال کردن prefetch ممکنه از رفتار ناخواسته جلوگیری کنه
                   className="w-full"
                 >
                   <div className="border border-colorThemeLite-green rounded-2xl p-4 flex gap-4 my-2 items-center hover:scale-[102%] hover:bg-colorThemeLite-green/20 transition-transform cursor-pointer">
@@ -102,12 +106,8 @@ function TopPerformers() {
                       className="w-16 h-16 rounded-2xl object-cover border border-colorThemeLite-green/60"
                     />
                     <div className="flex justify-between items-center flex-1 text-left">
-                      <span className="font-bold text-lg">
-                        {user.display_name}
-                      </span>
-                      <span className="text-sm text-colorThemeLite-accent">
-                        امتیاز: {user.total_points}
-                      </span>
+                      <span className="font-bold text-lg">{user.display_name}</span>
+                      <span className="text-sm text-colorThemeLite-accent">امتیاز: {user.total_points}</span>
                     </div>
                   </div>
                 </Link>
