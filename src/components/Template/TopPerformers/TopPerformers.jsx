@@ -29,45 +29,30 @@ const UserSkeleton = () => (
 
 const fetchUsersTopPerformers = async ({ pageParam = 1, queryKey }) => {
   const [_, searchTerm] = queryKey;
-  const PER_PAGE = 15;
   const params = new URLSearchParams({
-    per_page: String(PER_PAGE),
     page: String(pageParam),
+    per_page: '15'
   });
-
   if (searchTerm) {
     params.append("q", searchTerm);
   }
 
   try {
-    const { data } = await apiClient.get(
-      `api/admin/check_test_leader?${params.toString()}`
-    );
+    // ما می‌خواهیم کل آبجکت پاسخ axios را ببینیم، نه فقط .data آن را
+    const response = await apiClient.get(`api/admin/check_test_leader?${params.toString()}`);
+    
+    // ---!!! این مهم‌ترین خطوط کد در کل این دیباگ است !!!---
+    console.log("--- START API RESPONSE ---");
+    console.log("این کل آبجکت پاسخی است که از سرور دریافت شده:");
+    console.log(response);
+    console.log("--- END API RESPONSE ---");
+    
+    // فعلا برای اینکه برنامه به هیچ وجه کرش نکند، یک آرایه خالی برمی‌گردانیم
+    return []; 
 
-    // این لاگ حیاتی است. خروجی آن را برای من بفرست.
-    console.log("پاسخ کامل از API:", data);
-
-    // --- کد هوشمند جدید برای پیدا کردن آرایه ---
-
-    // 1. اول چک می‌کنیم آیا خودِ data یک آرایه است
-    if (Array.isArray(data)) {
-      return data;
-    }
-
-    // 2. اگر نبود، چک می‌کنیم آیا آبجکتی است که آرایه را داخل خودش دارد
-    if (data && typeof data === "object") {
-      // دنبال کلیدهای رایج می‌گردیم: data, users, items, results
-      const potentialArray =
-        data.data || data.users || data.items || data.results;
-      if (Array.isArray(potentialArray)) {
-        return potentialArray;
-      }
-    }
-
-    // 3. اگر در هیچ حالتی آرایه‌ای پیدا نشد، برای جلوگیری از کرش، آرایه خالی برمی‌گردانیم
-    return [];
   } catch (error) {
-    console.error("Error fetching users:", error);
+    console.error("API call failed!", error);
+    // در صورت خطا هم آرایه خالی برمی‌گردانیم
     return [];
   }
 };
