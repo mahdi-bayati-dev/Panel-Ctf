@@ -2,15 +2,14 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import apiClient from "@/lib/axios"; // کلاینت axios را وارد می‌کنیم
-import useDebounce from "@/hooks/CustomDebounceHook"; // هوک debounce را وارد می‌کنیم
-import useAuth from "@/hooks/useAuth"; // برای گرفتن توکن
+import apiClient from "@/lib/axios";
+import useDebounce from "@/hooks/CustomDebounceHook";
+import useAuth from "@/hooks/useAuth";
 
 // آیکون‌ها
-import SearchIcon from "@/components/icons/SearchIcon";
 import SearchIcon_2 from "@/components/icons/searchIcon-2";
 
-// کامپوننت برای نمایش اسکلت لودینگ
+// کامپوننت اسکلت
 const UserSkeleton = () => (
   <div className="border border-colorThemeLite-green/30 rounded-2xl p-4 flex gap-4 my-2 items-center animate-pulse">
     <div className="w-16 h-16 rounded-2xl bg-gray-700"></div>
@@ -21,51 +20,58 @@ const UserSkeleton = () => (
   </div>
 );
 
-// تابع برای فراخوانی API و گرفتن لیست کاربران
-// این تابع باید کل آبجکت پاسخ را برگرداند تا به next_cursor دسترسی داشته باشیم
-const fetchUsersTopPerformers = async ({ pageParam = null, queryKey }) => {
+// *** اصلاح تابع fetch ***
+// حالا pageParam شماره صفحه است (مثلاً 1, 2, 3)
+const fetchUsersTopPerformers = async ({ pageParam = 1, queryKey }) => {
   const [_, searchTerm] = queryKey;
+  const PER_PAGE = 15; // تعداد آیتم‌ها را به عنوان یک متغیر تعریف می‌کنیم
   const params = new URLSearchParams({
-    per_page: "15", // تعداد آیتم در هر صفحه
+    per_page: String(PER_PAGE),
+    page: String(pageParam), // ارسال شماره صفحه به API
   });
-  if (pageParam) {
-    params.append("cursor", pageParam);
-  }
+
   if (searchTerm) {
     params.append("q", searchTerm);
   }
-  // response.data کل آبجکت پاسخ از API است (شامل data و next_cursor)
   const { data } = await apiClient.get(
     `api/admin/check_test_leader?${params.toString()}`
   );
   console.log(data);
   
 
-  // ما کل این آبجکت را برمی‌گردانیم
+  // API شما مستقیماً آرایه را برمی‌گرداند
   return data;
 };
 
 function TopPerformers() {
-  const { accessToken } = useAuth(); // توکن را از کانتکست می‌گیریم
+  const { accessToken } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
-
-  // از هوک useDebounce استفاده می‌کنیم تا جلوی درخواست‌های مکرر را بگیریم
-  const debouncedSearchTerm = useDebounce(searchTerm, 400); // 400 میلی‌ثانیه تأخیر
+  const debouncedSearchTerm = useDebounce(searchTerm, 400);
 
   const {
     data,
     error,
     fetchNextPage,
     hasNextPage,
-    isFetching,
     isFetchingNextPage,
     status,
   } = useInfiniteQuery({
     queryKey: ["users", debouncedSearchTerm],
     queryFn: fetchUsersTopPerformers,
-    // getNextPageParam حالا به درستی کار می‌کند چون lastPage یک آبجکت است
-    getNextPageParam: (lastPage) => lastPage.next_cursor ?? undefined,
-    initialPageParam: null,
+
+    // *** اصلاح منطق دریافت صفحه بعدی ***
+    // اگر تعداد آیتم‌های صفحه آخر برابر با PER_PAGE بود، یعنی صفحه بعدی وجود دارد
+    getNextPageParam: (lastPage, allPages) => {
+      const PER_PAGE = 15;
+      // اگر صفحه آخر خالی بود یا تعداد آیتم‌هایش کمتر از حد انتظار بود، یعنی صفحه بعدی وجود ندارد
+      if (!lastPage || lastPage.length < PER_PAGE) {
+        return undefined;
+      }
+      // شماره صفحه بعدی برابر است با تعداد کل صفحات دریافت شده + 1
+      return allPages.length + 1;
+    },
+    // صفحه اول از شماره 1 شروع می‌شود
+    initialPageParam: 1,
     enabled: !!accessToken,
   });
 
@@ -97,46 +103,40 @@ function TopPerformers() {
           {/* لیست کاربران */}
           <div className="flax flex-col">
             {status === "pending" ? (
-              // نمایش اسکلت‌های لودینگ در زمان بارگذاری اولیه
               Array.from({ length: 5 }).map((_, i) => <UserSkeleton key={i} />)
             ) : status === "error" ? (
-              // نمایش پیام خطا در صورت بروز مشکل
               <div className="text-red-500">
                 خطا در دریافت اطلاعات: {error.message}
               </div>
             ) : (
-              // نمایش لیست کاربران
               <>
                 {data.pages.map((page, i) => (
-                  <React.Fragment key={i}>
-                    {/* *** نکته کلیدی اصلاح شده ***
-                      حالا page یک آبجکت است و ما باید روی آرایه page.data پیمایش کنیم.
-                      این کد شما از اول درست بود، مشکل از داده‌ای بود که به آن می‌رسید.
-                    */}
-                    {page.data &&
-                      page.data.map((user) => (
-                        <Link
-                          key={user.id}
-                          href={`/user/${user.id}`}
-                          className="w-full"
-                        >
-                          <div className="border border-colorThemeLite-green rounded-2xl p-4 flex gap-4 my-2 items-center hover:scale-[102%] hover:bg-colorThemeLite-green/20 transition-transform cursor-pointer">
-                            <img
-                              src={user.picture_url || "/img/p-user/person.png"}
-                              alt={user.name}
-                              className="w-16 h-16 rounded-2xl object-cover border border-colorThemeLite-green/60"
-                            />
-                            <div className="flex justify-between items-center flex-1 text-left">
-                              <span className="font-bold text-lg">
-                                {user.name}
-                              </span>
-                              <span className="text-sm text-colorThemeLite-accent">
-                                ID: {user.id}
-                              </span>
-                            </div>
+                  <React.Fragment key={`page-${i}`}>
+                    {/* *** اصلاح نهایی رندر *** حالا مستقیم روی page که آرایه کاربران است map می‌زنیم
+                     */}
+                    {page.map((user) => (
+                      <Link
+                        key={user.id}
+                        href={`/user/${user.id}`}
+                        className="w-full"
+                      >
+                        <div className="border border-colorThemeLite-green rounded-2xl p-4 flex gap-4 my-2 items-center hover:scale-[102%] hover:bg-colorThemeLite-green/20 transition-transform cursor-pointer">
+                          <img
+                            src={user.picture_url || "/img/p-user/person.png"}
+                            alt={user.name}
+                            className="w-16 h-16 rounded-2xl object-cover border border-colorThemeLite-green/60"
+                          />
+                          <div className="flex justify-between items-center flex-1 text-left">
+                            <span className="font-bold text-lg">
+                              {user.name || user.display_name}
+                            </span>
+                            <span className="text-sm text-colorThemeLite-accent">
+                              ID: {user.id}
+                            </span>
                           </div>
-                        </Link>
-                      ))}
+                        </div>
+                      </Link>
+                    ))}
                   </React.Fragment>
                 ))}
               </>
