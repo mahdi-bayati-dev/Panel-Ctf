@@ -93,7 +93,7 @@ function TopPerformers() {
           </div>
 
           {/* لیست کاربران */}
-          <div className="flax flex-col">
+          {/* <div className="flax flex-col">
             {isPending ? ( // استفاده از isPending برای حالت لودینگ
               Array.from({ length: 5 }).map((_, i) => <UserSkeleton key={i} />)
             ) : isError ? ( // استفاده از isError برای حالت خطا
@@ -101,7 +101,7 @@ function TopPerformers() {
                 خطا در دریافت اطلاعات: {error.message}
               </div>
             ) : (
-              // حالا مستقیماً روی آرایه users حلقه می‌زنیم
+              
               users.map((user) => (
                 <Link
                   key={user.id}
@@ -127,13 +127,12 @@ function TopPerformers() {
               ))
             )}
 
-            {/* نمایش پیام در صورتی که هیچ کاربری یافت نشود */}
             {users && users.length === 0 && !isPending && (
               <div className="text-center text-gray-400 mt-8">
                 هیچ کاربری یافت نشد.
               </div>
             )}
-          </div>
+          </div> */}
         </div>
       </div>
     </div>
