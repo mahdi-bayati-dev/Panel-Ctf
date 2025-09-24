@@ -37,6 +37,8 @@ const fetchAllUsers = async ({ queryKey }) => {
 
   try {
     const { data } = await apiClient.get(endpoint);
+    console.log(data);
+    
 
     // اطمینان از اینکه پاسخ همیشه یک آرایه است
     if (Array.isArray(data)) {
