@@ -109,6 +109,8 @@ function TopPerformers() {
               // نمایش لیست کاربران
               <>
                 {data.pages.map((page, i) => (
+                    console.log(data),
+                    
                   <React.Fragment key={i}>
                     {page.data.map((user) => (
                       <Link
