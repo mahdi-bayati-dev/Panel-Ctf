@@ -23,7 +23,7 @@ const UserSkeleton = () => (
 // تابع نهایی و صحیح برای دریافت اطلاعات کاربران
 const fetchUsersTopPerformers = async ({ pageParam = 1, queryKey }) => {
   const [_, searchTerm] = queryKey;
-  const PER_PAGE = 15; // تعداد آیتم در هر صفحه
+  const PER_PAGE = 15;
   const params = new URLSearchParams({
     page: String(pageParam),
     per_page: String(PER_PAGE),
@@ -33,21 +33,29 @@ const fetchUsersTopPerformers = async ({ pageParam = 1, queryKey }) => {
     params.append("q", searchTerm);
   }
 
+  // اضافه کردن لاگ برای دیباگ در Vercel
+  console.log(`Fetching page: ${pageParam}, search: "${searchTerm}"`);
+
   try {
-    // با استفاده از destructuring، مستقیماً به پراپرتی data از پاسخ axios دسترسی پیدا می‌کنیم
     const { data } = await apiClient.get(
       `api/admin/check_test_leader?${params.toString()}`
     );
 
-    // یک بررسی نهایی برای اطمینان از اینکه پاسخ همیشه یک آرایه است
-    // این کار جلوی کرش در حالت‌هایی که API نتیجه‌ای ندارد را می‌گیرد
+    // لاگ کردن داده دریافتی در Vercel
+    console.log("Data received on Vercel:", data);
+
     if (Array.isArray(data)) {
       return data;
     }
-    return []; // اگر پاسخ آرایه نبود، یک آرایه خالی برمی‌گردانیم
+    // اگر داده دریافتی آرایه نبود، لاگ می‌کنیم تا در Vercel ببینیم
+    console.warn("Received data is NOT an array. Returning empty array.", data);
+    return [];
   } catch (error) {
-    console.error("خطا در دریافت اطلاعات کاربران:", error);
-    // در صورت بروز هرگونه خطا در شبکه، یک آرایه خالی برمی‌گردانیم تا برنامه کرش نکند
+    // لاگ کردن خطا در Vercel
+    console.error(
+      "Error fetching users on Vercel:",
+      error.response || error.message
+    );
     return [];
   }
 };
