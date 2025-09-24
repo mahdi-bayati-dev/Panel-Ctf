@@ -11,7 +11,7 @@ import FaqIcon from "@/components/icons/faqIcon";
 import TicketIcon from "@/components/icons/ticketIcon";
 import ChaleshIcon from "@/components/icons/chaleshIcon";
 import RulesIcon from "@/components/icons/rulesIcon";
-
+import TopPerformersIcon from "@/components/icons/TopPerformersIcon";
 const DashboardHeader = ({ user, onLogout }) => (
   <div className="w-full flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
     <h1 className="text-xl md:text-2xl font-bold text-white">
@@ -32,11 +32,12 @@ export default function DashboardPage() {
 
   // مرحله ۱: کامپوننت آیکون را به هر آبجکت در آرایه اضافه می‌کنیم
   const tabs = [
-    { id: "users",      label: "کاربران",       icon: <UserPanelIcon /> },
-    { id: "ticket",     label: "تیکت ها",       icon: <TicketIcon /> },
-    { id: "challenges", label: "چالش‌ها",      icon: <ChaleshIcon/> },
-    { id: "faq",        label: "سوالات متداول",  icon: <FaqIcon /> },
-    { id: "rules",      label: "قوانین",        icon: <RulesIcon /> },
+    { id: "users", label: "کاربران", icon: <UserPanelIcon /> },
+    { id: "ticket", label: "تیکت ها", icon: <TicketIcon /> },
+    { id: "challenges", label: "چالش‌ها", icon: <ChaleshIcon /> },
+    { id: "faq", label: "سوالات متداول", icon: <FaqIcon /> },
+    { id: "rules", label: "قوانین", icon: <RulesIcon /> },
+    { id: "topPerformers", label: "نفرات برتر", icon: <TopPerformersIcon /> },
   ];
 
   return (
