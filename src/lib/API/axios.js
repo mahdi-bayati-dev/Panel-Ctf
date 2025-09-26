@@ -3,13 +3,13 @@
 import axios from "axios";
 import { getCookie } from "@/utils/utils"; // تابع getCookie شما
 
-// console.log(
-//   `AXIOS_INSTANCE: Initializing with API URL: ${process.env.NEXT_PUBLIC_API_BASE_URL}`
-// );
+console.log(
+  `AXIOS_INSTANCE: Initializing with API URL: ${process.env.NEXT_PUBLIC_API_BASE_URL}`
+);
 
 const apiClient = axios.create({
-  //  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
-   baseURL: "/api",
+   baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
+  //  baseURL: "/api",
   
   // این گزینه معادل credentials: 'include' است و برای همه درخواست‌ها کوکی‌ها را ارسال می‌کند
   withCredentials: true,
