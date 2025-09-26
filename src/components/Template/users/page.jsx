@@ -104,7 +104,7 @@ function UsersPage() {
                       (page.data || page).map((user) => (
                         <Link
                           key={user.id}
-                          href={`/admin/users/${user.id}`} // ✨ نکته: مسیر به صفحه جزئیات کاربر اصلاح شد
+                          href={`/users/${user.id}`} // ✨ نکته: مسیر به صفحه جزئیات کاربر اصلاح شد
                           className="w-full"
                         >
                           <div className="border border-colorThemeLite-green rounded-2xl p-4 flex gap-4 my-2 items-center hover:scale-[102%] hover:bg-colorThemeLite-green/20 transition-transform cursor-pointer">
