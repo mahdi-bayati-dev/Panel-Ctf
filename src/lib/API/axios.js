@@ -8,8 +8,9 @@ import { getCookie } from "@/utils/utils"; // تابع getCookie شما
 // );
 
 const apiClient = axios.create({
-  // baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
+  //  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
    baseURL: "/api",
+  
   // این گزینه معادل credentials: 'include' است و برای همه درخواست‌ها کوکی‌ها را ارسال می‌کند
   withCredentials: true,
   headers: {
