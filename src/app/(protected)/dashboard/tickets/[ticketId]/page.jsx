@@ -9,7 +9,7 @@ import {
   replyAdminTicket,
   closeAdminTicket,
   reopenAdminTicket,
-} from "@/lib/adminTicketsApi";
+} from "@/lib/API/adminTicketsApi";
 import toast from "react-hot-toast";
 
 // آیکن‌ها و کامپوننت‌های UI

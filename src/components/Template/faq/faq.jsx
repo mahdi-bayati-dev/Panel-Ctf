@@ -5,7 +5,7 @@ import Delete from "@/components/icons/delete";
 import Edit from "@/components/icons/edite";
 
 // وارد کردن سرویس‌های API که ساختیم
-import { getFaqs, createFaq, updateFaq, deleteFaq } from "@/lib/faqService";
+import { getFaqs, createFaq, updateFaq, deleteFaq } from "@/lib/API/faqService";
 
 function FAQAdmin() {
   // === استیت‌ها ===

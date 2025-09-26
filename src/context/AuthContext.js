@@ -3,7 +3,7 @@
 "use client";
 import { createContext, useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import apiClient, { setGetAccessToken } from "../lib/axios";
+import apiClient, { setGetAccessToken } from "@/lib/API/axios";
 import toast from "react-hot-toast";
 
 const AuthContext = createContext(null);

@@ -3,7 +3,7 @@
 
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import apiClient from "@/lib/axios";
+import apiClient from "@/lib/API/axios";
 import useAuth from "@/hooks/useAuth";
 import Link from "next/link";
 import BackIcon from "@/components/icons/back";

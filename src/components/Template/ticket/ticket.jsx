@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { listAdminTickets } from "@/lib/adminTicketsApi";
+import { listAdminTickets } from "@/lib/API/adminTicketsApi";
 import { TicketSkeleton } from "@/components/ui/TicketSkeleton";
 
 // کامپوننت برای نمایش پیام خطا

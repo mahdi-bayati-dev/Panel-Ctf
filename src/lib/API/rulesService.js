@@ -1,5 +1,5 @@
 // src/services/rulesService.js
-import apiClient from "@/lib/axios";
+import apiClient from "./axios";
 import toast from "react-hot-toast";
 
 /**

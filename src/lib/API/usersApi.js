@@ -1,6 +1,6 @@
 // فایل: lib/api/usersApi.js
 
-import apiClient from "@/lib/axios";
+import apiClient from "@/lib/API/axios";
 
 /**
  * @description لیست کاربران را برای پنل ادمین با قابلیت جستجو و صفحه‌بندی (cursor) دریافت می‌کند

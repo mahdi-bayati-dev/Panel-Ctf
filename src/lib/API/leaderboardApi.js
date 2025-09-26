@@ -1,6 +1,6 @@
 // فایل: lib/api/leaderboardApi.js
 
-import apiClient from "@/lib/axios";
+import apiClient from "./axios";
 
 /**
  * @description لیست کاربران برتر (لیدربرد) را با قابلیت جستجو دریافت می‌کند

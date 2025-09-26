@@ -11,7 +11,7 @@ import {
   createChallenge,
   updateChallenge,
   deleteChallenge,
-} from "@/lib/challengesApi"; // مسیر فایل را چک کنید
+} from "@/lib/API/challengesApi"; // مسیر فایل را چک کنید
 
 const LoadingSpinner = () => (
   <div className="text-center p-10">

@@ -6,7 +6,7 @@ import { useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import useDebounce from "./CustomDebounceHook"; // مسیر هوک debounce
 import useAuth from "./useAuth"; // مسیر هوک useAuth
-import { fetchUsers } from "@/lib/usersApi";
+import { fetchUsers } from "@/lib/API/usersApi";
 
 /**
  * @description هوک سفارشی برای مدیریت کامل منطق دریافت، کشینگ و جستجوی لیست کاربران

@@ -11,7 +11,7 @@ import { fetchTopPerformers } from "@/lib/API/leaderboardApi";
 
 // آیکون‌ها
 import Flag from "@/components/icons/flag";
-import { SearchIcon_2 } from "@/components/icons/searchIcon-2";
+import SearchIcon_2 from "@/components/icons/searchIcon-2";
 
 function TopPerformers() {
   const { accessToken } = useAuth();

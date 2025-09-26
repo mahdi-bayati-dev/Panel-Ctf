@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 import TikIcon from "@/components/icons/tik";
 import BackIcon from "@/components/icons/back";
 import RulesIcon from "@/components/icons/rulesIcon";
-import { getRules, updateRule, createRule } from "@/lib/rulesService";
+import { getRules, updateRule, createRule } from "@/lib/API/rulesService";
 
 function Rules() {
   // === استیت‌ها (بدون تغییر) ===
