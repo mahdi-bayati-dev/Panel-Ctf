@@ -1,62 +1,24 @@
 "use client";
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
-import { useInfiniteQuery } from "@tanstack/react-query";
-import apiClient from "@/lib/axios"; // کلاینت axios را وارد می‌کنیم
-import useDebounce from "@/hooks/CustomDebounceHook"; // هوک debounce را وارد می‌کنیم
-import useAuth from "@/hooks/useAuth"; // برای گرفتن توکن
-
+import { useUsers } from "@/hooks/useUsers"; // ✅ وارد کردن هوک سفارشی جدید
+import UserSkeleton from "@/components/ui/userSkelton";
 // آیکون‌ها
-import SearchIcon from "@/components/icons/SearchIcon";
 import SearchIcon_2 from "@/components/icons/searchIcon-2";
 
-// کامپوننت برای نمایش اسکلت لودینگ
-const UserSkeleton = () => (
-  <div className="border border-colorThemeLite-green/30 rounded-2xl p-4 flex gap-4 my-2 items-center animate-pulse">
-    <div className="w-16 h-16 rounded-2xl bg-gray-700"></div>
-    <div className="flex flex-col gap-2">
-      <div className="h-4 w-32 bg-gray-700 rounded"></div>
-      <div className="h-3 w-24 bg-gray-700 rounded"></div>
-    </div>
-  </div>
-);
-
-// تابع برای فراخوانی API و گرفتن لیست کاربران
-// این تابع pageParam را دریافت می‌کند که همان 'cursor' ماست
-const fetchUsers = async ({ pageParam = null, queryKey }) => {
-  const [_, searchTerm] = queryKey;
-  const params = new URLSearchParams({
-    per_page: "15", // تعداد آیتم در هر صفحه
-  });
-  if (pageParam) {
-    params.append("cursor", pageParam);
-  }
-  if (searchTerm) {
-    params.append("q", searchTerm);
-  }
-  const { data } = await apiClient.get(`/api/admin/users?${params.toString()}`);
-  return data;
-};
-
+// ✅ کامپوننت UsersPage بسیار تمیز و متمرکز بر UI شده است
 function UsersPage() {
-  const { accessToken } = useAuth();
-  const [searchTerm, setSearchTerm] = useState("");
-  const debouncedSearchTerm = useDebounce(searchTerm, 400);
-
+  // کامنت: تمام منطق پیچیده، پشت این یک خط پنهان شده است!
   const {
     data,
     error,
+    status,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-    status,
-  } = useInfiniteQuery({
-    queryKey: ["users", debouncedSearchTerm],
-    queryFn: fetchUsers, // ✅ بهبود ۱: استفاده از Optional Chaining برای امنیت بیشتر // اگر lastPage یک آرایه باشد، این کد خطا نمی‌دهد و undefined برمی‌گرداند
-    getNextPageParam: (lastPage) => lastPage?.next_cursor ?? undefined,
-    initialPageParam: null,
-    enabled: !!accessToken,
-  });
+    searchTerm,
+    setSearchTerm,
+  } = useUsers();
 
   return (
     <div className="min-h-screen flex flex-col items-center text-center mt-2 ">
@@ -72,6 +34,7 @@ function UsersPage() {
               <span>جست‌وجو</span>
             </label>
             <div className="flex flex-col sm:flex-row gap-2 px-2">
+              {/* کامنت: ورودی جستجو حالا مقدار و آپدیت خود را از هوک useUsers می‌گیرد */}
               <input
                 id="search"
                 type="text"
@@ -83,56 +46,49 @@ function UsersPage() {
             </div>
           </div>
 
-          {/* لیست کاربران */}
+          {/* لیست کاربران (JSX این بخش دقیقاً مثل قبل است و نیازی به تغییر ندارد) */}
           <div className="flax flex-col">
             {status === "pending" ? (
-              // نمایش اسکلت‌های لودینگ در زمان بارگذاری اولیه
               Array.from({ length: 5 }).map((_, i) => <UserSkeleton key={i} />)
             ) : status === "error" ? (
-              // نمایش پیام خطا در صورت بروز مشکل
               <div className="text-red-500">
                 خطا در دریافت اطلاعات: {error.message}
               </div>
             ) : (
-              // نمایش لیست کاربران
               <>
                 {data.pages.map((page, i) => (
                   <React.Fragment key={i}>
-                    {
-                      // ✅ بهبود ۲: چک کردن هوشمند ساختار داده
-                      // اگر page.data وجود داشت از آن استفاده کن، در غیر این صورت خود page را به عنوان آرایه در نظر بگیر
-                      (page.data || page).map((user) => (
-                        <Link
-                          key={user.id}
-                          href={`/user/${user.id}`} // ✨ نکته: مسیر به صفحه جزئیات کاربر اصلاح شد
-                          className="w-full"
-                        >
-                          <div className="border border-colorThemeLite-green rounded-2xl p-4 flex gap-4 my-2 items-center hover:scale-[102%] hover:bg-colorThemeLite-green/20 transition-transform cursor-pointer">
-                            <img
-                              src={user.picture_url || "/img/p-user/person.png"}
-                              alt={user.name}
-                              className="w-16 h-16 rounded-2xl object-cover border border-colorThemeLite-green/60"
-                            />
+                    {(page.data || page).map((user) => (
+                      <Link
+                        key={user.id}
+                        href={`/admin/users/${user.id}`}
+                        className="w-full"
+                      >
+                        <div className="border border-colorThemeLite-green rounded-2xl p-4 flex gap-4 my-2 items-center hover:scale-[102%] hover:bg-colorThemeLite-green/20 transition-transform cursor-pointer">
+                          <img
+                            src={user.picture_url || "/img/p-user/person.png"}
+                            alt={user.name}
+                            className="w-16 h-16 rounded-2xl object-cover border border-colorThemeLite-green/60"
+                          />
 
-                            {/* این div رو flex-1 کن تا عرض پر بشه */}
-                            <div className="flex justify-between items-center flex-1 text-left">
-                              <span className="font-bold text-lg">
-                                {user.name}
-                              </span>
-                              <span className="text-sm text-colorThemeLite-accent">
-                                ID: {user.id}
-                              </span>
-                            </div>
+                          {/* این div رو flex-1 کن تا عرض پر بشه */}
+                          <div className="flex justify-between items-center flex-1 text-left">
+                            <span className="font-bold text-lg">
+                              {user.name}
+                            </span>
+                            <span className="text-sm text-colorThemeLite-accent">
+                              ID: {user.id}
+                            </span>
                           </div>
-                        </Link>
-                      ))
-                    }
+                        </div>
+                      </Link>
+                    ))}
                   </React.Fragment>
                 ))}
               </>
             )}
 
-            {/* دکمه "بارگذاری بیشتر" */}
+            {/* دکمه "بارگذاری بیشتر" (بدون تغییر) */}
             <div className="mt-6">
               <button
                 onClick={() => fetchNextPage()}

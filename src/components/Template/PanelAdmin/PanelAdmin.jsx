@@ -1,16 +1,17 @@
 "use client";
 // PanelAdmin.js
-import React from "react";
-import Ticket from "@/components/Template/ticket/ticket";
-import UsersPage from "../users/page";
-import FAQAdmin from "@/components/Template/faq/faq";
-import Rules from "../rules/rules";
-import ChallengesAdmin from "../challenges/challenges";
-import TopPerformers from "../TopPerformers/TopPerformers";
+import React, { Suspense, lazy } from "react";
+import { TicketSkeleton } from "@/components/ui/TicketSkeleton"; // یک کامپوننت لودینگ ساده بساز
 
-// کامپوننت دیگر استیت داخلی ندارد و فقط یک prop به نام activeTab دریافت می‌کند
+// کامنت: کامپوننت‌ها را به صورت lazy وارد می‌کنیم
+const UsersPage = lazy(() => import("../users/page"));
+const Ticket = lazy(() => import("@/components/Template/ticket/ticket"));
+const FAQAdmin = lazy(() => import("@/components/Template/faq/faq"));
+const Rules = lazy(() => import("../rules/rules"));
+const ChallengesAdmin = lazy(() => import("../challenges/challenges"));
+const TopPerformers = lazy(() => import("../TopPerformers/TopPerformers"));
+
 export default function PanelAdmin({ activeTab }) {
-  // تابعی برای رندر کردن محتوای تب فعال
   const renderContent = () => {
     switch (activeTab) {
       case "users":
@@ -20,25 +21,21 @@ export default function PanelAdmin({ activeTab }) {
       case "faq":
         return <FAQAdmin />;
       case "challenges":
-        // کامپوننت چالش‌ها را اینجا قرار دهید
         return <ChallengesAdmin />;
       case "rules":
-        // کامپوننت قوانین را اینجا قرار دهید
         return <Rules />;
-              case "topPerformers":
-        // کامپوننت قوانین را اینجا قرار دهید
+      case "topPerformers":
         return <TopPerformers />;
       default:
-        // اگر هیچ تبی انتخاب نشده بود، یک پیام پیش‌فرض نشان بده
         return <p>لطفا یک بخش را از منو انتخاب کنید.</p>;
     }
   };
 
   return (
-    // یک کانتینر ثابت برای نمایش محتوا که استایل‌های قبلی را دارد
     <div className="w-full rounded-lg bg-dark p-5 text-white border border-colorThemeLite-green">
-      {/* محتوای تب فعال در اینجا رندر می‌شود */}
-      {renderContent()}
+      {/* کامنت: از Suspense برای نمایش یک لودینگ در زمان بارگذاری کد هر بخش استفاده می‌کنیم */}
+
+      <Suspense fallback={< TicketSkeleton />}> {renderContent()}</Suspense>
     </div>
   );
 }
