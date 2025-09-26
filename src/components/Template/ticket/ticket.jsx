@@ -136,7 +136,7 @@ export default function AdminTicketsList() {
             tickets.map((ticket) => (
               <Link
                 key={ticket.id}
-                href={`/tickets/${ticket.id}`} // ✅ اطمینان از مسیر صحیح ادمین
+                href={`/dashboard/tickets/${ticket.id}`} 
                 className="block"
               >
                 {/* 🔄 تغییر: ردیف جدول به ۶ ستون تغییر کرد */}

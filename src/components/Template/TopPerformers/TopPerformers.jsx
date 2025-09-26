@@ -2,43 +2,16 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import apiClient from "@/lib/axios";
 import useDebounce from "@/hooks/CustomDebounceHook";
 import useAuth from "@/hooks/useAuth";
-import Flag from "@/components/icons/flag";
+import UserSkeleton from "@/components/ui/userSkelton";
+
+// ✅ کامنت: وارد کردن تابع API از فایل جداگانه
+import { fetchTopPerformers } from "@/lib/API/leaderboardApi";
 
 // آیکون‌ها
-import SearchIcon_2 from "@/components/icons/searchIcon-2";
-
-// کامپوننت برای نمایش اسکلت لودینگ
-const UserSkeleton = () => (
-  <div className="border border-colorThemeLite-green/30 rounded-2xl p-4 flex gap-4 my-2 items-center animate-pulse">
-    <div className="w-16 h-16 rounded-2xl bg-gray-700"></div>
-    <div className="flex flex-col gap-2">
-      <div className="h-4 w-32 bg-gray-700 rounded"></div>
-      <div className="h-3 w-24 bg-gray-700 rounded"></div>
-    </div>
-  </div>
-);
-
-// تابع دریافت همه کاربران
-const fetchAllUsers = async ({ queryKey }) => {
-  const [_, searchTerm] = queryKey;
-  const params = new URLSearchParams();
-  if (searchTerm) {
-    params.append("q", searchTerm);
-  }
-  const endpoint = `api/admin/check_test_leader?${params.toString()}`;
-  try {
-    const { data } = await apiClient.get(endpoint);
-    console.log(data);
-
-    return Array.isArray(data) ? data : [];
-  } catch (error) {
-    console.error("Error fetching users:", error.response || error.message);
-    throw error;
-  }
-};
+import Flag from "@/components/icons/flag";
+import { SearchIcon_2 } from "@/components/icons/searchIcon-2";
 
 function TopPerformers() {
   const { accessToken } = useAuth();
@@ -51,9 +24,19 @@ function TopPerformers() {
     isPending,
     isError,
   } = useQuery({
-    queryKey: ["users", debouncedSearchTerm],
-    queryFn: fetchAllUsers,
+    // ☢️✅ نکته بسیار مهم: اصلاح queryKey برای جلوگیری از تداخل کش
+    // کامنت: کلید کوئری را به یک نام منحصر به فرد تغییر دادیم تا با کش لیست اصلی کاربران تداخل پیدا نکند.
+    queryKey: ["topPerformers", debouncedSearchTerm],
+
+    // کامنت: استفاده از تابع جدا شده
+    queryFn: fetchTopPerformers,
+
     enabled: !!accessToken,
+
+    // ✅ نکته بهینه‌سازی: تنظیم staleTime
+    // کامنت: به React Query می‌گوییم که این داده تا ۵ دقیقه "تازه" است.
+    // این کار از درخواست‌های شبکه غیرضروری هنگام جابجایی بین تب‌ها جلوگیری می‌کند.
+    staleTime: 1000 * 60 * 5, // 5 دقیقه
   });
 
   return (
@@ -87,26 +70,24 @@ function TopPerformers() {
               />
             </div>
           </div>
-
-          {/* لیست کاربران */}
-          <div className="flax flex-col">
-            {isPending ? (
-              Array.from({ length: 5 }).map((_, i) => <UserSkeleton key={i} />)
-            ) : isError ? (
-              <div className="text-red-500">
-                خطا در دریافت اطلاعات: {error?.message || "خطای ناشناخته"}
-              </div>
-            ) : Array.isArray(users) && users.length > 0 ? (
-              users.map((user) => (
-                // <Link
-                //   key={user.id}
-                //   href={`/user/${user.id}`}
-                //   className="w-full"
-                // >
-                <div
-                  key={user.id}
-                  className="border border-colorThemeLite-green rounded-2xl p-4 flex gap-4 my-2 items-center hover:scale-[102%] hover:bg-colorThemeLite-green/20 transition-transform cursor-pointer"
-                >
+        </div>
+        {/* لیست کاربران */}
+        <div className="flax flex-col">
+          {isPending ? (
+            Array.from({ length: 5 }).map((_, i) => <UserSkeleton key={i} />)
+          ) : isError ? (
+            <div className="text-red-500">
+              خطا در دریافت اطلاعات: {error?.message || "خطای ناشناخته"}
+            </div>
+          ) : users && users.length > 0 ? ( // ✅ بهبود جزئی: چک کردن وجود users قبل از length
+            users.map((user) => (
+              // ✅ کامنت: لینک را فعال کردیم و مسیر آن را به صفحه جزئیات کاربر در پنل ادمین اصلاح کردیم.
+              <Link
+                key={user.id}
+                href={`/admin/users/${user.id}`}
+                className="w-full"
+              >
+                <div className="border border-colorThemeLite-green rounded-2xl p-4 flex gap-4 my-2 items-center hover:scale-[102%] hover:bg-colorThemeLite-green/20 transition-transform cursor-pointer">
                   <img
                     src={user.picture_url || "/img/p-user/person.png"}
                     alt={user.display_name || "User Avatar"}
@@ -121,14 +102,13 @@ function TopPerformers() {
                     </span>
                   </div>
                 </div>
-                // </Link>
-              ))
-            ) : (
-              <div className="text-center text-gray-400 mt-8">
-                هیچ کاربری یافت نشد.
-              </div>
-            )}
-          </div>
+              </Link>
+            ))
+          ) : (
+            <div className="text-center text-gray-400 mt-8">
+              هیچ کاربری یافت نشد.
+            </div>
+          )}
         </div>
       </div>
     </div>
