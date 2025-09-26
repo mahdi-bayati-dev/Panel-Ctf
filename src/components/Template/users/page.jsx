@@ -39,32 +39,22 @@ const fetchUsers = async ({ pageParam = null, queryKey }) => {
 };
 
 function UsersPage() {
-  const { accessToken } = useAuth(); // توکن را از کانتکست می‌گیریم
+  const { accessToken } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 400);
 
-  // از هوک useDebounce استفاده می‌کنیم تا جلوی درخواست‌های مکرر را بگیریم
-  const debouncedSearchTerm = useDebounce(searchTerm, 400); // 400 میلی‌ثانیه تأخیر
-
-  // استفاده از useInfiniteQuery برای مدیریت داده‌ها، لودینگ، خطا و صفحه‌بندی
   const {
     data,
     error,
     fetchNextPage,
     hasNextPage,
-    isFetching,
     isFetchingNextPage,
     status,
   } = useInfiniteQuery({
-    // queryKey یک آرایه است. وقتی searchTerm تغییر کند، react-query به صورت خودکار داده‌ها را دوباره فراخوانی می‌کند.
     queryKey: ["users", debouncedSearchTerm],
-    // queryFn تابعی است که برای گرفتن داده‌ها استفاده می‌شود.
-    queryFn: fetchUsers,
-    // getNextPageParam مشخص می‌کند که پارامتر صفحه بعدی (cursor) چیست.
-    // اگر next_cursor وجود داشت، آن را برای صفحه بعد برمی‌گردانیم، در غیر این صورت undefined برمی‌گردانیم.
-    getNextPageParam: (lastPage) => lastPage.next_cursor ?? undefined,
-    // این گزینه برای جلوگیری از فراخوانی اولیه در زمان مانت شدن کامپوننت است
+    queryFn: fetchUsers, // ✅ بهبود ۱: استفاده از Optional Chaining برای امنیت بیشتر // اگر lastPage یک آرایه باشد، این کد خطا نمی‌دهد و undefined برمی‌گرداند
+    getNextPageParam: (lastPage) => lastPage?.next_cursor ?? undefined,
     initialPageParam: null,
-    // فقط در صورتی که توکن وجود داشته باشد، کوئری را فعال می‌کنیم
     enabled: !!accessToken,
   });
 
@@ -108,31 +98,35 @@ function UsersPage() {
               <>
                 {data.pages.map((page, i) => (
                   <React.Fragment key={i}>
-                    {page.data.map((user) => (
-                      <Link
-                        key={user.id}
-                        href={`/user/${user.id}`}
-                        className="w-full"
-                      >
-                        <div className="border border-colorThemeLite-green rounded-2xl p-4 flex gap-4 my-2 items-center hover:scale-[102%] hover:bg-colorThemeLite-green/20 transition-transform cursor-pointer">
-                          <img
-                            src={user.picture_url || "/img/p-user/person.png"}
-                            alt={user.name}
-                            className="w-16 h-16 rounded-2xl object-cover border border-colorThemeLite-green/60"
-                          />
+                    {
+                      // ✅ بهبود ۲: چک کردن هوشمند ساختار داده
+                      // اگر page.data وجود داشت از آن استفاده کن، در غیر این صورت خود page را به عنوان آرایه در نظر بگیر
+                      (page.data || page).map((user) => (
+                        <Link
+                          key={user.id}
+                          href={`/admin/users/${user.id}`} // ✨ نکته: مسیر به صفحه جزئیات کاربر اصلاح شد
+                          className="w-full"
+                        >
+                          <div className="border border-colorThemeLite-green rounded-2xl p-4 flex gap-4 my-2 items-center hover:scale-[102%] hover:bg-colorThemeLite-green/20 transition-transform cursor-pointer">
+                            <img
+                              src={user.picture_url || "/img/p-user/person.png"}
+                              alt={user.name}
+                              className="w-16 h-16 rounded-2xl object-cover border border-colorThemeLite-green/60"
+                            />
 
-                          {/* این div رو flex-1 کن تا عرض پر بشه */}
-                          <div className="flex justify-between items-center flex-1 text-left">
-                            <span className="font-bold text-lg">
-                              {user.name}
-                            </span>
-                            <span className="text-sm text-colorThemeLite-accent">
-                              ID: {user.id}
-                            </span>
+                            {/* این div رو flex-1 کن تا عرض پر بشه */}
+                            <div className="flex justify-between items-center flex-1 text-left">
+                              <span className="font-bold text-lg">
+                                {user.name}
+                              </span>
+                              <span className="text-sm text-colorThemeLite-accent">
+                                ID: {user.id}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      </Link>
-                    ))}
+                        </Link>
+                      ))
+                    }
                   </React.Fragment>
                 ))}
               </>
