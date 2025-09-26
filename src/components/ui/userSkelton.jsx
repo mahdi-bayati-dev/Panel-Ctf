@@ -8,3 +8,4 @@ const UserSkeleton = () => (
     </div>
   </div>
 );
+export default UserSkeleton
